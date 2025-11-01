@@ -172,7 +172,7 @@ export function Testimonials() {
               variants={itemVariants}
               className="text-center"
             >
-              <div className="text-4xl md:text-5xl font-bold text-gradient mb-2">
+              <div className="text-4xl md:text-5xl font-bold text-primary-600 mb-2">
                 {stat.number}
               </div>
               <div className="text-xl font-semibold text-neutral-900 mb-2">
@@ -197,7 +197,7 @@ export function Testimonials() {
               {/* Avatar and Info */}
               <div className="md:col-span-1">
                 <div className="text-center md:text-left">
-                  <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto md:mx-0 mb-4">
+                  <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto md:mx-0 mb-4">
                     {testimonials[currentIndex].avatar}
                   </div>
                   <h3 className="text-xl font-semibold text-neutral-900 mb-1">
@@ -250,14 +250,14 @@ export function Testimonials() {
           {/* Navigation */}
           <button
             onClick={prevTestimonial}
-            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200"
+            className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200"
             aria-label="Previous testimonial"
           >
             <ChevronLeftIcon className="w-6 h-6" />
           </button>
           <button
             onClick={nextTestimonial}
-            className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200"
+            className="absolute -right-8 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200"
             aria-label="Next testimonial"
           >
             <ChevronRightIcon className="w-6 h-6" />

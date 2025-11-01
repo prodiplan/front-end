@@ -117,7 +117,7 @@ export default function AuthPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left side - Background */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-secondary-600 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-black opacity-10"></div>
         <div className="relative z-10 flex flex-col justify-center px-12 py-16">
           <motion.div
@@ -288,9 +288,7 @@ export default function AuthPage() {
                   />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-gradient">
-                ProdiPlan
-              </span>
+              <span className="text-2xl font-bold text-primary-600">ProdiPlan</span>
             </Link>
 
             {/* Toggle Buttons */}

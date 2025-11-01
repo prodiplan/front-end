@@ -106,9 +106,6 @@ export function HowItWorks() {
         </motion.div>
 
         <div className="relative">
-          {/* Connection Line */}
-          <div className="hidden lg:block absolute top-1/2 left-0 right-0 h-0.5 bg-neutral-200 transform -translate-y-1/2" />
-
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -127,10 +124,6 @@ export function HowItWorks() {
                   <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto shadow-medium">
                     {step.number}
                   </div>
-                  {/* Connection Line for Mobile */}
-                  {index < steps.length - 1 && (
-                    <div className="lg:hidden absolute top-10 left-full w-full h-0.5 bg-neutral-200 transform translate-x-4" />
-                  )}
                 </div>
 
                 {/* Icon */}
@@ -207,7 +200,7 @@ export function HowItWorks() {
                 </motion.a>
               </div>
             </div>
-            <div className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl p-8 h-96 flex items-center justify-center">
+            <div className="bg-white rounded-xl p-8 h-96 flex items-center justify-center border border-primary-200">
               <div className="text-center">
                 <div className="w-32 h-32 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-soft">
                   <SparklesIcon className="w-16 h-16 text-primary-600" />

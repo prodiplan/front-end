@@ -79,7 +79,7 @@ export function Hero() {
   return (
     <section className="relative pt-32 pb-20 overflow-hidden">
       {/* Background Gradient */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50" />
+      <div className="absolute inset-0 bg-white" />
 
       {/* Decorative Elements */}
       <div className="absolute top-20 left-10 w-72 h-72 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
