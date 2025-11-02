@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   SparklesIcon,
   ArrowRightIcon,
@@ -18,8 +18,9 @@ import { Navigation } from "@/components/layout/navigation";
 import { Footer } from "@/components/layout/footer";
 
 export default function DashboardPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, logout } = useAuth();
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -89,7 +90,10 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <Navigation />
+      <Navigation
+        showTestimonials={false}
+        onLogoutClick={() => setShowLogoutConfirm(true)}
+      />
       <main className="pt-20">
         {/* Hero Section */}
         <section className="relative py-20 overflow-hidden">
@@ -193,7 +197,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Features Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-7xl">
             <motion.div
               initial={{ opacity: 0 }}
@@ -241,7 +245,10 @@ export default function DashboardPage() {
         </section>
 
         {/* How It Works Section */}
-        <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+        <section
+          id="how-it-works"
+          className="py-20 px-4 sm:px-6 lg:px-8 bg-white"
+        >
           <div className="mx-auto max-w-7xl">
             <motion.div
               initial={{ opacity: 0 }}
@@ -356,6 +363,53 @@ export default function DashboardPage() {
       </main>
 
       <Footer />
+
+      {/* Logout Confirmation Popup */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={() => setShowLogoutConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-lg shadow-xl p-8 max-w-sm w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-xl font-semibold text-neutral-900 mb-3">
+                Konfirmasi Keluar
+              </h3>
+              <p className="text-neutral-600 mb-8 leading-relaxed">
+                Apakah Anda yakin ingin keluar dari akun Anda?
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 px-4 py-2.5 rounded-lg border border-neutral-300 text-neutral-700 font-medium hover:bg-neutral-50 transition-colors duration-200"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowLogoutConfirm(false);
+                  }}
+                  className="flex-1 px-4 py-2.5 rounded-lg bg-semantic-error text-white font-medium hover:bg-semantic-error/90 transition-colors duration-200"
+                >
+                  Keluar
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

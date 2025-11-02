@@ -13,29 +13,19 @@ import Link from "next/link";
 export default function ConfirmationPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [timeLeft, setTimeLeft] = useState(10);
 
   useEffect(() => {
     // Simulate page load
     setTimeout(() => setIsLoading(false), 500);
   }, []);
 
-  useEffect(() => {
-    if (timeLeft <= 0) {
-      router.push("/profile");
-      return;
-    }
-
-    const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [timeLeft, router]);
-
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-primary-50">
         <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6 }}
           className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full"
         >
           <CheckCircleIcon className="w-8 h-8 text-white" />
@@ -47,8 +37,8 @@ export default function ConfirmationPage() {
   return (
     <div className="min-h-screen bg-primary-50 flex items-center justify-center px-4 py-8">
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
         className="max-w-2xl w-full"
       >
@@ -57,29 +47,15 @@ export default function ConfirmationPage() {
           {/* Gradient Header */}
           <div className="bg-primary-600 px-8 py-12 sm:px-12 sm:py-16 text-center">
             <motion.div
-              initial={{ opacity: 0, scale: 0 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
               className="mb-6 flex justify-center"
             >
               <div className="relative w-20 h-20 sm:w-24 sm:h-24">
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ duration: 0.8, delay: 0.4 }}
-                  className="absolute inset-0 bg-white rounded-full flex items-center justify-center"
-                >
+                <div className="absolute inset-0 bg-white rounded-full flex items-center justify-center">
                   <CheckCircleIcon className="w-12 h-12 sm:w-14 sm:h-14 text-primary-600" />
-                </motion.div>
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-                  className="absolute inset-0 rounded-full border-2 border-white border-opacity-0"
-                  style={{
-                    borderTopColor: "white",
-                    borderRightColor: "white",
-                  }}
-                />
+                </div>
               </div>
             </motion.div>
 
@@ -196,28 +172,6 @@ export default function ConfirmationPage() {
                   </motion.div>
                 ))}
               </div>
-            </motion.div>
-
-            {/* Timer Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.8 }}
-              className="bg-primary-50 border border-primary-200 rounded-xl p-6 sm:p-8 mb-8 text-center"
-            >
-              <p className="text-neutral-600 text-sm sm:text-base mb-3">
-                Anda akan diarahkan ke halaman profil dalam
-              </p>
-              <motion.div
-                animate={{ scale: [1, 1.1, 1] }}
-                transition={{ duration: 1, repeat: Infinity }}
-                className="text-4xl font-bold text-primary-600 mb-2"
-              >
-                {timeLeft} detik
-              </motion.div>
-              <p className="text-neutral-600 text-xs sm:text-sm">
-                Atau klik tombol di bawah untuk langsung ke profil
-              </p>
             </motion.div>
 
             {/* Action Buttons */}

@@ -241,7 +241,7 @@ Add to `.env.local`:
 
 ```env
 # API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 # For production:
 # NEXT_PUBLIC_API_URL=https://api.prodiplan.id
 ```
@@ -324,7 +324,7 @@ toast.success("Selesai!", { id: toastId });
 ### 1. Using Postman/Insomnia
 
 ```
-POST http://localhost:3001/api/essay-grader/submit
+POST http://localhost:3000/api/essay-grader/submit
 Headers:
   Content-Type: application/json
   Authorization: Bearer {token}
@@ -345,7 +345,7 @@ Body:
 
 ```javascript
 // Open browser console and run:
-fetch("http://localhost:3001/api/essay-grader/submit", {
+fetch("http://localhost:3000/api/essay-grader/submit", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",

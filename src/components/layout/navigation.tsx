@@ -15,7 +15,15 @@ import {
   ChevronDownIcon,
 } from "@heroicons/react/24/outline";
 
-export function Navigation() {
+interface NavigationProps {
+  showTestimonials?: boolean;
+  onLogoutClick?: () => void;
+}
+
+export function Navigation({
+  showTestimonials = true,
+  onLogoutClick,
+}: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
@@ -60,10 +68,32 @@ export function Navigation() {
     }
   };
 
+  // Handle logout with confirmation popup
+  const handleLogoutClick = () => {
+    if (onLogoutClick) {
+      onLogoutClick();
+    } else {
+      logout();
+      setIsUserDropdownOpen(false);
+      setIsMenuOpen(false);
+    }
+  };
+
+  const confirmLogout = () => {
+    logout();
+    setIsUserDropdownOpen(false);
+    setIsMenuOpen(false);
+  };
+
+  const cancelLogout = () => {
+    setIsUserDropdownOpen(false);
+    setIsMenuOpen(false);
+  };
+
   const navigation = [
     { name: "Fitur", href: "#features" },
     { name: "Cara Kerja", href: "#how-it-works" },
-    { name: "Testimoni", href: "#testimonials" },
+    ...(showTestimonials ? [{ name: "Testimoni", href: "#testimonials" }] : []),
   ];
 
   return (
@@ -142,10 +172,7 @@ export function Navigation() {
                         <span>Profil</span>
                       </Link>
                       <button
-                        onClick={() => {
-                          logout();
-                          setIsUserDropdownOpen(false);
-                        }}
+                        onClick={handleLogoutClick}
                         className="flex items-center space-x-2 w-full px-4 py-2.5 text-sm font-medium text-neutral-600 hover:text-semantic-error hover:bg-neutral-50 transition-colors duration-200 border-t border-neutral-200"
                       >
                         <ArrowRightOnRectangleIcon className="h-4 w-4" />
@@ -193,7 +220,10 @@ export function Navigation() {
                     key={item.name}
                     href={item.href}
                     className="block px-3 py-2 text-base font-medium text-neutral-700 hover:text-primary-600 hover:bg-neutral-50 rounded-lg transition-colors duration-200"
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={(e) => {
+                      handleSmoothScroll(e, item.href);
+                      setIsMenuOpen(false);
+                    }}
                   >
                     {item.name}
                   </Link>
@@ -211,10 +241,7 @@ export function Navigation() {
                         <span>Profil</span>
                       </Link>
                       <button
-                        onClick={() => {
-                          logout();
-                          setIsMenuOpen(false);
-                        }}
+                        onClick={handleLogoutClick}
                         className="flex items-center space-x-2 w-full px-3 py-2 text-base font-medium text-neutral-600 hover:text-semantic-error hover:bg-neutral-50 rounded-lg transition-colors duration-200"
                       >
                         <ArrowRightOnRectangleIcon className="h-5 w-5" />

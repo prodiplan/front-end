@@ -296,7 +296,7 @@ NEXT_PUBLIC_API_URL=https://api.prodiplan.id
 
 ```bash
 # .env.local
-NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_API_URL=http://localhost:3000
 # (atau kosong untuk auto-detect demo mode)
 ```
 

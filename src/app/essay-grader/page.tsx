@@ -70,6 +70,7 @@ export default function EssayGraderPage() {
   const [answers, setAnswers] = useState<{ [key: number]: string }>({});
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showReview, setShowReview] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -178,6 +179,11 @@ export default function EssayGraderPage() {
           timeLeft={timeLeft}
           formatTime={formatTime}
           isSubmitting={isSubmitting}
+          answers={answers}
+          questions={questions}
+          onQuestionSelect={(qNum) => setCurrentQuestion(qNum)}
+          showReview={showReview}
+          onShowReview={setShowReview}
         />
       )}
 
@@ -407,6 +413,11 @@ function TestScreen({
   timeLeft,
   formatTime,
   isSubmitting,
+  answers,
+  questions,
+  onQuestionSelect,
+  showReview,
+  onShowReview,
 }: {
   question: Question;
   currentQuestion: number;
@@ -419,6 +430,11 @@ function TestScreen({
   timeLeft: number;
   formatTime: (seconds: number) => string;
   isSubmitting: boolean;
+  answers: { [key: number]: string };
+  questions: Question[];
+  onQuestionSelect: (qNum: number) => void;
+  showReview: boolean;
+  onShowReview: (show: boolean) => void;
 }) {
   const progress = (currentQuestion / totalQuestions) * 100;
   const isLastQuestion = currentQuestion === totalQuestions;
@@ -436,7 +452,9 @@ function TestScreen({
               </div>
               <div>
                 <p className="text-sm text-neutral-600">
-                  Pertanyaan {currentQuestion} dari {totalQuestions}
+                  {showReview
+                    ? "Review Jawaban"
+                    : `Pertanyaan ${currentQuestion} dari ${totalQuestions}`}
                 </p>
                 <p className="font-semibold text-neutral-900">
                   Essay Preparedness Grader
@@ -444,33 +462,45 @@ function TestScreen({
               </div>
             </div>
 
-            {/* Timer */}
-            <motion.div
-              animate={{
-                backgroundColor: isTimeRunningOut ? "#fee2e2" : "transparent",
-              }}
-              className="flex items-center space-x-2 px-4 py-2 rounded-lg"
-            >
-              <ClockIcon
-                className={`w-5 h-5 ${
-                  isTimeRunningOut ? "text-red-600" : "text-neutral-600"
-                }`}
-              />
-              <span
-                className={`font-mono font-semibold ${
-                  isTimeRunningOut ? "text-red-600" : "text-neutral-900"
-                }`}
+            {/* Review Button and Timer */}
+            <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => onShowReview(!showReview)}
+                className="btn btn-secondary text-sm py-2"
               >
-                {formatTime(timeLeft)}
-              </span>
-            </motion.div>
+                {showReview ? "Kembali" : "Review"}
+              </motion.button>
+
+              {/* Timer */}
+              <motion.div
+                animate={{
+                  backgroundColor: isTimeRunningOut ? "#fee2e2" : "transparent",
+                }}
+                className="flex items-center space-x-2 px-4 py-2 rounded-lg"
+              >
+                <ClockIcon
+                  className={`w-5 h-5 ${
+                    isTimeRunningOut ? "text-red-600" : "text-neutral-600"
+                  }`}
+                />
+                <span
+                  className={`font-mono font-semibold ${
+                    isTimeRunningOut ? "text-red-600" : "text-neutral-900"
+                  }`}
+                >
+                  {formatTime(timeLeft)}
+                </span>
+              </motion.div>
+            </div>
           </div>
 
           {/* Progress Bar */}
           <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${progress}%` }}
+              animate={{ width: `${showReview ? 100 : progress}%` }}
               transition={{ duration: 0.5 }}
               className="h-full bg-primary-600"
             />
@@ -480,119 +510,266 @@ function TestScreen({
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <motion.div
-            key={currentQuestion}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-          >
-            {/* Question Card */}
-            <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
-              <div className="mb-6">
-                <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-medium mb-4">
-                  <span>Pertanyaan {currentQuestion}</span>
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
-                  {question.question}
-                </h2>
-              </div>
-
-              {/* Tips Box */}
-              <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-neutral-700">
-                  <span className="font-semibold text-secondary-800">Tip:</span>{" "}
-                  {question.tips}
-                </p>
-              </div>
-
-              {/* Text Area */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-neutral-700 mb-3">
-                  Jawaban Anda
-                </label>
-                <textarea
-                  value={answer}
-                  onChange={(e) => onAnswer(e.target.value)}
-                  placeholder={question.placeholder}
-                  className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-none font-regular text-neutral-900 placeholder-neutral-500"
-                  rows={8}
-                />
-                <p className="text-sm text-neutral-500 mt-2">
-                  {answer.length} karakter
-                </p>
-              </div>
-
-              {/* Character count indicator */}
-              {answer.length < 100 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {!showReview && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column - Question Content */}
+              <div className="lg:col-span-2">
                 <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6"
+                  key={currentQuestion}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
                 >
-                  <p className="text-sm text-yellow-800">
-                    💡 Cobalah untuk menulis minimal 100 karakter untuk jawaban
-                    yang lebih detail
-                  </p>
+                  {/* Question Card */}
+                  <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
+                    <div className="mb-6">
+                      <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-medium mb-4">
+                        <span>Pertanyaan {currentQuestion}</span>
+                      </div>
+                      <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+                        {question.question}
+                      </h2>
+                    </div>
+
+                    {/* Tips Box */}
+                    <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
+                      <p className="text-sm text-neutral-700">
+                        <span className="font-semibold text-secondary-800">
+                          Tip:
+                        </span>{" "}
+                        {question.tips}
+                      </p>
+                    </div>
+
+                    {/* Text Area */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-neutral-700 mb-3">
+                        Jawaban Anda
+                      </label>
+                      <textarea
+                        value={answer}
+                        onChange={(e) => onAnswer(e.target.value)}
+                        placeholder={question.placeholder}
+                        className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-none font-regular text-neutral-900 placeholder-neutral-500"
+                        rows={8}
+                      />
+                      <p className="text-sm text-neutral-500 mt-2">
+                        {answer.length} karakter
+                      </p>
+                    </div>
+
+                    {/* Character count indicator */}
+                    {answer.length < 100 && (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6"
+                      >
+                        <p className="text-sm text-yellow-800">
+                          💡 Cobalah untuk menulis minimal 100 karakter untuk
+                          jawaban yang lebih detail
+                        </p>
+                      </motion.div>
+                    )}
+                  </div>
+
+                  {/* Navigation */}
+                  <div className="flex items-center justify-between gap-4">
+                    <motion.button
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={onPrevious}
+                      disabled={currentQuestion === 1}
+                      className="btn btn-secondary px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      ← Sebelumnya
+                    </motion.button>
+
+                    {/* Question indicators */}
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: totalQuestions }).map((_, i) => (
+                        <motion.div
+                          key={i}
+                          animate={{
+                            backgroundColor:
+                              i + 1 === currentQuestion
+                                ? "#3b82f6"
+                                : answer.length > 0 && i + 1 < currentQuestion
+                                  ? "#10b981"
+                                  : "#e5e7eb",
+                          }}
+                          className="w-3 h-3 rounded-full"
+                        />
+                      ))}
+                    </div>
+
+                    {isLastQuestion ? (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onSubmit}
+                        disabled={isSubmitting}
+                        className="btn btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                      >
+                        <span>
+                          {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
+                        </span>
+                        <SparklesIcon className="w-5 h-5" />
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onNext}
+                        className="btn btn-primary px-6 py-3"
+                      >
+                        Selanjutnya →
+                      </motion.button>
+                    )}
+                  </div>
                 </motion.div>
-              )}
-            </div>
+              </div>
 
-            {/* Navigation */}
-            <div className="flex items-center justify-between gap-4">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={onPrevious}
-                disabled={currentQuestion === 1}
-                className="btn btn-secondary px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+              {/* Right Column - Navigation Sidebar */}
+              <motion.div
+                className="lg:col-span-1 h-fit sticky top-24 bg-white rounded-2xl shadow-md p-6"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
-                ← Sebelumnya
-              </motion.button>
+                <h3 className="font-semibold text-neutral-900 mb-4">
+                  Navigasi Soal
+                </h3>
+                <div className="grid grid-cols-3 gap-2">
+                  {questions.map((q) => (
+                    <motion.button
+                      key={q.id}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onQuestionSelect(q.id)}
+                      className={`w-full py-2 rounded-lg font-medium text-sm transition-colors ${
+                        q.id === currentQuestion
+                          ? "bg-primary-600 text-white"
+                          : answers[q.id] && answers[q.id].trim().length > 0
+                            ? "bg-green-100 text-green-800"
+                            : "bg-neutral-200 text-neutral-600 hover:bg-neutral-300"
+                      }`}
+                    >
+                      {q.id}
+                    </motion.button>
+                  ))}
+                </div>
+                <div className="mt-6 pt-6 border-t border-neutral-200">
+                  <p className="text-sm text-neutral-600 mb-2">
+                    <span className="font-medium">
+                      {
+                        Object.entries(answers).filter(
+                          ([, value]) => value && value.trim().length > 0
+                        ).length
+                      }
+                      /{questions.length}
+                    </span>{" "}
+                    soal terjawab
+                  </p>
+                  <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+                    <motion.div
+                      animate={{
+                        width: `${(Object.entries(answers).filter(([, value]) => value && value.trim().length > 0).length / questions.length) * 100}%`,
+                      }}
+                      transition={{ duration: 0.3 }}
+                      className="h-full bg-green-500"
+                    />
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
 
-              {/* Question indicators */}
-              <div className="flex items-center gap-2">
-                {Array.from({ length: totalQuestions }).map((_, i) => (
+          {showReview && (
+            <div className="max-w-4xl mx-auto">
+              <div className="space-y-6">
+                {questions.map((q) => (
                   <motion.div
-                    key={i}
-                    animate={{
-                      backgroundColor:
-                        i + 1 === currentQuestion
-                          ? "#3b82f6"
-                          : answer.length > 0 && i + 1 < currentQuestion
-                            ? "#10b981"
-                            : "#e5e7eb",
-                    }}
-                    className="w-3 h-3 rounded-full"
-                  />
+                    key={q.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="bg-white rounded-2xl shadow-md p-8"
+                  >
+                    <div className="flex items-start justify-between mb-6">
+                      <div className="flex-1">
+                        <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-medium mb-4">
+                          <span>Pertanyaan {q.id}</span>
+                        </div>
+                        <h3 className="text-xl font-bold text-neutral-900">
+                          {q.question}
+                        </h3>
+                      </div>
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          onShowReview(false);
+                          onQuestionSelect(q.id);
+                        }}
+                        className="btn btn-secondary text-sm ml-4"
+                      >
+                        Edit
+                      </motion.button>
+                    </div>
+
+                    {answers[q.id] ? (
+                      <div className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+                        <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed">
+                          {answers[q.id]}
+                        </p>
+                        <p className="text-sm text-neutral-500 mt-4">
+                          {answers[q.id].length} karakter
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
+                        <p className="text-yellow-800 font-medium">
+                          ⚠️ Soal ini belum dijawab
+                        </p>
+                      </div>
+                    )}
+                  </motion.div>
                 ))}
               </div>
 
-              {isLastQuestion ? (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onSubmit}
-                  disabled={isSubmitting}
-                  className="btn btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
-                >
-                  <span>
-                    {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
-                  </span>
-                  <SparklesIcon className="w-5 h-5" />
-                </motion.button>
-              ) : (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={onNext}
-                  className="btn btn-primary px-6 py-3"
-                >
-                  Selanjutnya →
-                </motion.button>
-              )}
+              {/* Submit Button */}
+              <div className="mt-8 flex justify-center">
+                {Object.entries(answers).filter(
+                  ([, value]) => value && value.trim().length > 0
+                ).length === questions.length ? (
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onSubmit}
+                    disabled={isSubmitting}
+                    className="btn btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    <span>
+                      {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
+                    </span>
+                    <SparklesIcon className="w-5 h-5" />
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="bg-yellow-50 rounded-lg p-4 border border-yellow-200"
+                  >
+                    <p className="text-yellow-800 font-medium">
+                      ⚠️ Harap isi semua soal sebelum submit
+                    </p>
+                  </motion.div>
+                )}
+              </div>
             </div>
-          </motion.div>
+          )}
         </div>
       </div>
     </div>
