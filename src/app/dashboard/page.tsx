@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
-import { Navigation } from "@/components/layout/navigation";
+import { ProdiPlanNavBar } from "@/components/ui/prodiplan-navbar";
 import { Footer } from "@/components/layout/footer";
 
 export default function DashboardPage() {
@@ -90,8 +90,8 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-neutral-50">
-      <Navigation
-        showTestimonials={false}
+      <ProdiPlanNavBar
+        user={user}
         onLogoutClick={() => setShowLogoutConfirm(true)}
       />
       <main className="pt-20">

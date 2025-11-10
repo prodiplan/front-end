@@ -134,7 +134,7 @@ export function Features() {
               key={index}
               variants={itemVariants}
               whileHover={{ y: -5 }}
-              className="card card-hover p-8 h-full"
+              className="card card-hover p-8 h-full border border-neutral-200"
             >
               <div
                 className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 ${

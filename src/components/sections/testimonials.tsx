@@ -191,7 +191,7 @@ export function Testimonials() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.5 }}
-            className="card p-8 md:p-12"
+            className="card p-8 md:p-12 border border-neutral-200"
           >
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {/* Avatar and Info */}

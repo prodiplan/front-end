@@ -11,6 +11,14 @@ const config: Config = {
     "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
+    screens: {
+      'xs': '320px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '768px', // Custom: set lg to 768px instead of 1024px
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       colors: {
         primary: {
@@ -91,7 +99,7 @@ const config: Config = {
         "fade-in": "fadeIn 0.5s ease-in-out",
         "slide-up": "slideUp 0.3s ease-out",
         "pulse-slow": "pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "bounce-slow": "bounce 2s infinite",
+        "bounce-slow": "bounce 3s cubic-bezier(0.25, 0.46, 0.45, 0.94) infinite",
         "scale-in": "scaleIn 0.4s ease-out",
         shake: "shake 0.4s ease-in-out",
         glow: "glow 2s ease-in-out infinite",

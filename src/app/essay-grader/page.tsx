@@ -202,42 +202,42 @@ function IntroScreen({
   onBack: () => void;
 }) {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="border-b border-neutral-200 bg-white bg-opacity-50 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <div className="border-b border-neutral-200 bg-white bg-opacity-50 backdrop-blur-sm flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-2">
           <div className="flex items-center justify-between">
             <Link
               href="/dashboard"
               className="flex items-center space-x-2 group"
             >
-              <ArrowLeftIcon className="w-5 h-5 text-neutral-600 group-hover:text-primary-600 transition-colors" />
-              <span className="text-neutral-600 group-hover:text-primary-600 transition-colors font-medium">
+              <ArrowLeftIcon className="w-4 h-4 text-neutral-600 group-hover:text-primary-600 transition-colors" />
+              <span className="text-neutral-600 group-hover:text-primary-600 transition-colors font-medium text-xs sm:text-sm">
                 Kembali
               </span>
             </Link>
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-primary-600" />
+              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                <SparklesIcon className="w-4 h-4 text-primary-600" />
               </div>
-              <span className="font-semibold text-neutral-900">ProdiPlan</span>
+              <span className="font-semibold text-neutral-900 text-xs sm:text-sm">ProdiPlan</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex items-center justify-center px-4 py-20">
+      <div className="flex-1 flex items-center justify-center px-2 sm:px-4 py-4 overflow-hidden">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="max-w-3xl w-full"
+          className="max-w-3xl w-full h-full overflow-y-auto"
         >
           {/* Welcome Card */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4">
             {/* Gradient Header */}
-            <div className="bg-primary-600 px-8 py-12">
+            <div className="bg-primary-600 px-4 sm:px-6 py-6">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -245,7 +245,7 @@ function IntroScreen({
               >
                 <SplitText
                   text="Selamat datang di Essay Preparedness Grader"
-                  className="text-3xl md:text-4xl font-bold text-white mb-3"
+                  className="text-xl sm:text-2xl font-bold text-white mb-2"
                   tag="h1"
                   delay={80}
                   duration={1.5}
@@ -261,7 +261,7 @@ function IntroScreen({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-white text-opacity-90 text-lg"
+                className="text-white text-opacity-90 text-xs sm:text-sm"
               >
                 Analisis mendalam untuk menentukan kesiapan Anda menjalani
                 jurusan pilihan
@@ -269,60 +269,60 @@ function IntroScreen({
             </div>
 
             {/* Content */}
-            <div className="px-8 py-12">
+            <div className="px-4 sm:px-6 py-6">
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.3 }}
-                className="mb-8"
+                className="mb-4"
               >
-                <h2 className="text-2xl font-semibold text-neutral-900 mb-6">
+                <h2 className="text-lg font-semibold text-neutral-900 mb-3">
                   Tentang Test Ini
                 </h2>
-                <div className="space-y-4">
-                  <div className="flex items-start space-x-3">
-                    <CheckCircleIcon className="w-6 h-6 text-secondary-600 flex-shrink-0 mt-0.5" />
+                <div className="space-y-2">
+                  <div className="flex items-start space-x-2">
+                    <CheckCircleIcon className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-neutral-900">
+                      <p className="font-medium text-neutral-900 text-sm">
                         5 Pertanyaan Essay
                       </p>
-                      <p className="text-neutral-600 text-sm">
+                      <p className="text-neutral-600 text-xs">
                         Jawab dengan jujur dan detail sesuai dengan pengalaman
                         pribadi Anda
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircleIcon className="w-6 h-6 text-secondary-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start space-x-2">
+                    <CheckCircleIcon className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-neutral-900">
+                      <p className="font-medium text-neutral-900 text-sm">
                         Durasi ±10-15 Menit
                       </p>
-                      <p className="text-neutral-600 text-sm">
+                      <p className="text-neutral-600 text-xs">
                         Ada timer yang akan membantu Anda mengelola waktu dengan
                         baik
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircleIcon className="w-6 h-6 text-secondary-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start space-x-2">
+                    <CheckCircleIcon className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-neutral-900">
+                      <p className="font-medium text-neutral-900 text-sm">
                         Analisis AI Mendalam
                       </p>
-                      <p className="text-neutral-600 text-sm">
+                      <p className="text-neutral-600 text-xs">
                         Sistem kami akan menganalisis esai Anda dengan teknologi
                         AI terdepan
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start space-x-3">
-                    <CheckCircleIcon className="w-6 h-6 text-secondary-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start space-x-2">
+                    <CheckCircleIcon className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium text-neutral-900">
+                      <p className="font-medium text-neutral-900 text-sm">
                         Hasil Komprehensif
                       </p>
-                      <p className="text-neutral-600 text-sm">
+                      <p className="text-neutral-600 text-xs">
                         Dapatkan laporan lengkap dengan rekomendasi dan insight
                         berharga
                       </p>
@@ -336,13 +336,13 @@ function IntroScreen({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.5 }}
-                className="bg-primary-50 border border-primary-200 rounded-lg p-6 mb-8"
+                className="bg-primary-50 border border-primary-200 rounded-lg p-4 mb-4"
               >
-                <h3 className="font-semibold text-neutral-900 mb-3 flex items-center space-x-2">
-                  <SparklesIcon className="w-5 h-5 text-primary-600" />
+                <h3 className="font-semibold text-neutral-900 mb-2 flex items-center space-x-2 text-sm">
+                  <SparklesIcon className="w-4 h-4 text-primary-600" />
                   <span>Tips untuk Hasil Terbaik</span>
                 </h3>
-                <ul className="space-y-2 text-sm text-neutral-600">
+                <ul className="space-y-1 text-xs text-neutral-600">
                   <li>
                     ✓ Jawab dengan jujur dan autentik sesuai perasaan Anda
                   </li>
@@ -357,12 +357,12 @@ function IntroScreen({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
-                className="bg-neutral-100 rounded-lg p-4 mb-8"
+                className="bg-neutral-100 rounded-lg p-3 mb-4"
               >
-                <p className="text-sm text-neutral-600">
+                <p className="text-xs text-neutral-600">
                   <span className="font-medium">Peserta:</span> {user.full_name}
                 </p>
-                <p className="text-sm text-neutral-600">
+                <p className="text-xs text-neutral-600">
                   <span className="font-medium">Jurusan Pilihan:</span>{" "}
                   {user.dream_major || "Belum dipilih"}
                 </p>
@@ -373,22 +373,22 @@ function IntroScreen({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.7 }}
-                className="flex items-center gap-4"
+                className="flex items-center gap-2"
               >
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onStart}
-                  className="flex-1 btn btn-primary btn-lg px-6 py-3 flex items-center justify-center space-x-2"
+                  className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 sm:px-6 py-2 flex items-center justify-center space-x-2 text-xs sm:text-sm"
                 >
                   <span>Mulai Test Sekarang</span>
-                  <SparklesIcon className="w-5 h-5" />
+                  <SparklesIcon className="w-4 h-4" />
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onBack}
-                  className="btn btn-secondary btn-lg px-6 py-3"
+                  className="btn btn-secondary btn-sm sm:btn-md px-4 sm:px-6 py-2 text-xs sm:text-sm"
                 >
                   Kembali
                 </motion.button>
@@ -441,34 +441,34 @@ function TestScreen({
   const isTimeRunningOut = timeLeft < 300; // Less than 5 minutes
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="h-screen flex flex-col overflow-hidden">
       {/* Header with Timer */}
-      <div className="border-b border-neutral-200 bg-white bg-opacity-50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-primary-600" />
+      <div className="border-b border-neutral-200 bg-white bg-opacity-50 backdrop-blur-sm flex-shrink-0">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-2">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
+                <SparklesIcon className="w-4 h-4 text-primary-600" />
               </div>
               <div>
-                <p className="text-sm text-neutral-600">
+                <p className="text-xs text-neutral-600">
                   {showReview
                     ? "Review Jawaban"
                     : `Pertanyaan ${currentQuestion} dari ${totalQuestions}`}
                 </p>
-                <p className="font-semibold text-neutral-900">
+                <p className="font-semibold text-neutral-900 text-xs sm:text-sm">
                   Essay Preparedness Grader
                 </p>
               </div>
             </div>
 
             {/* Review Button and Timer */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => onShowReview(!showReview)}
-                className="btn btn-secondary text-sm py-2"
+                className="btn btn-secondary text-xs py-1 px-2"
               >
                 {showReview ? "Kembali" : "Review"}
               </motion.button>
@@ -478,15 +478,15 @@ function TestScreen({
                 animate={{
                   backgroundColor: isTimeRunningOut ? "#fee2e2" : "transparent",
                 }}
-                className="flex items-center space-x-2 px-4 py-2 rounded-lg"
+                className="flex items-center space-x-1 px-2 py-1 rounded-lg"
               >
                 <ClockIcon
-                  className={`w-5 h-5 ${
+                  className={`w-4 h-4 ${
                     isTimeRunningOut ? "text-red-600" : "text-neutral-600"
                   }`}
                 />
                 <span
-                  className={`font-mono font-semibold ${
+                  className={`font-mono font-semibold text-xs ${
                     isTimeRunningOut ? "text-red-600" : "text-neutral-900"
                   }`}
                 >
@@ -497,7 +497,7 @@ function TestScreen({
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+          <div className="w-full bg-neutral-200 rounded-full h-1 overflow-hidden">
             <motion.div
               initial={{ width: 0 }}
               animate={{ width: `${showReview ? 100 : progress}%` }}
@@ -510,31 +510,32 @@ function TestScreen({
 
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-4">
           {!showReview && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 h-full">
               {/* Left Column - Question Content */}
-              <div className="lg:col-span-2">
+              <div className="lg:col-span-3 flex flex-col min-h-0">
                 <motion.div
                   key={currentQuestion}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
+                  className="flex flex-col min-h-0 flex-1"
                 >
                   {/* Question Card */}
-                  <div className="bg-white rounded-2xl shadow-md p-8 mb-8">
-                    <div className="mb-6">
-                      <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-medium mb-4">
+                  <div className="bg-white rounded-lg shadow-md p-4 mb-3 flex flex-col min-h-0 flex-1 overflow-hidden">
+                    <div className="mb-2 flex-shrink-0">
+                      <div className="inline-flex items-center space-x-2 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs font-medium mb-2">
                         <span>Pertanyaan {currentQuestion}</span>
                       </div>
-                      <h2 className="text-2xl md:text-3xl font-bold text-neutral-900">
+                      <h2 className="text-lg md:text-xl font-bold text-neutral-900">
                         {question.question}
                       </h2>
                     </div>
 
                     {/* Tips Box */}
-                    <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-4 mb-6">
-                      <p className="text-sm text-neutral-700">
+                    <div className="bg-secondary-50 border border-secondary-200 rounded-lg p-3 mb-3 flex-shrink-0">
+                      <p className="text-xs text-neutral-700">
                         <span className="font-semibold text-secondary-800">
                           Tip:
                         </span>{" "}
@@ -543,18 +544,18 @@ function TestScreen({
                     </div>
 
                     {/* Text Area */}
-                    <div className="mb-6">
-                      <label className="block text-sm font-medium text-neutral-700 mb-3">
+                    <div className="mb-2 flex flex-col min-h-0 flex-1">
+                      <label className="block text-xs font-medium text-neutral-700 mb-2 flex-shrink-0">
                         Jawaban Anda
                       </label>
                       <textarea
                         value={answer}
                         onChange={(e) => onAnswer(e.target.value)}
                         placeholder={question.placeholder}
-                        className="w-full px-4 py-3 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-none font-regular text-neutral-900 placeholder-neutral-500"
-                        rows={8}
+                        className="w-full px-3 py-2 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-none font-regular text-xs text-neutral-900 placeholder-neutral-500 flex-1 min-h-0"
+                        rows={1}
                       />
-                      <p className="text-sm text-neutral-500 mt-2">
+                      <p className="text-xs text-neutral-500 mt-1 flex-shrink-0">
                         {answer.length} karakter
                       </p>
                     </div>
@@ -564,30 +565,29 @@ function TestScreen({
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-6"
+                        className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-2 flex-shrink-0"
                       >
-                        <p className="text-sm text-yellow-800">
-                          💡 Cobalah untuk menulis minimal 100 karakter untuk
-                          jawaban yang lebih detail
+                        <p className="text-xs text-yellow-800">
+                          💡 Min 100 karakter untuk jawaban detail
                         </p>
                       </motion.div>
                     )}
                   </div>
 
                   {/* Navigation */}
-                  <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center justify-between gap-2 flex-shrink-0">
                     <motion.button
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={onPrevious}
                       disabled={currentQuestion === 1}
-                      className="btn btn-secondary px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="btn btn-secondary px-3 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ← Sebelumnya
                     </motion.button>
 
                     {/* Question indicators */}
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1">
                       {Array.from({ length: totalQuestions }).map((_, i) => (
                         <motion.div
                           key={i}
@@ -599,7 +599,7 @@ function TestScreen({
                                   ? "#10b981"
                                   : "#e5e7eb",
                           }}
-                          className="w-3 h-3 rounded-full"
+                          className="w-2.5 h-2.5 rounded-full"
                         />
                       ))}
                     </div>
@@ -610,19 +610,19 @@ function TestScreen({
                         whileTap={{ scale: 0.95 }}
                         onClick={onSubmit}
                         disabled={isSubmitting}
-                        className="btn btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                        className="btn btn-primary px-4 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                       >
                         <span>
                           {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
                         </span>
-                        <SparklesIcon className="w-5 h-5" />
+                        <SparklesIcon className="w-3.5 h-3.5" />
                       </motion.button>
                     ) : (
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={onNext}
-                        className="btn btn-primary px-6 py-3"
+                        className="btn btn-primary px-3 py-2 text-xs"
                       >
                         Selanjutnya →
                       </motion.button>
@@ -633,22 +633,22 @@ function TestScreen({
 
               {/* Right Column - Navigation Sidebar */}
               <motion.div
-                className="lg:col-span-1 h-fit sticky top-24 bg-white rounded-2xl shadow-md p-6"
+                className="lg:col-span-1 bg-white rounded-lg shadow-md p-3 h-fit flex flex-col"
                 initial={{ opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.4, delay: 0.1 }}
               >
-                <h3 className="font-semibold text-neutral-900 mb-4">
+                <h3 className="font-semibold text-neutral-900 mb-2 text-xs">
                   Navigasi Soal
                 </h3>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-5 gap-1.5">
                   {questions.map((q) => (
                     <motion.button
                       key={q.id}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => onQuestionSelect(q.id)}
-                      className={`w-full py-2 rounded-lg font-medium text-sm transition-colors ${
+                      className={`w-full py-1.5 rounded-lg font-medium text-xs transition-colors ${
                         q.id === currentQuestion
                           ? "bg-primary-600 text-white"
                           : answers[q.id] && answers[q.id].trim().length > 0
@@ -660,8 +660,8 @@ function TestScreen({
                     </motion.button>
                   ))}
                 </div>
-                <div className="mt-6 pt-6 border-t border-neutral-200">
-                  <p className="text-sm text-neutral-600 mb-2">
+                <div className="mt-2 pt-2 border-t border-neutral-200">
+                  <p className="text-xs text-neutral-600 mb-1">
                     <span className="font-medium">
                       {
                         Object.entries(answers).filter(
@@ -670,9 +670,9 @@ function TestScreen({
                       }
                       /{questions.length}
                     </span>{" "}
-                    soal terjawab
+                    terjawab
                   </p>
-                  <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+                  <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
                     <motion.div
                       animate={{
                         width: `${(Object.entries(answers).filter(([, value]) => value && value.trim().length > 0).length / questions.length) * 100}%`,
@@ -687,22 +687,22 @@ function TestScreen({
           )}
 
           {showReview && (
-            <div className="max-w-4xl mx-auto">
-              <div className="space-y-6">
+            <div className="overflow-y-auto max-w-4xl mx-auto">
+              <div className="space-y-3">
                 {questions.map((q) => (
                   <motion.div
                     key={q.id}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
-                    className="bg-white rounded-2xl shadow-md p-8"
+                    className="bg-white rounded-lg shadow-md p-4"
                   >
-                    <div className="flex items-start justify-between mb-6">
-                      <div className="flex-1">
-                        <div className="inline-flex items-center space-x-2 px-3 py-1 bg-primary-100 text-primary-800 rounded-full text-sm font-medium mb-4">
-                          <span>Pertanyaan {q.id}</span>
+                  <div className="flex items-start justify-between mb-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="inline-flex items-center space-x-1 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs font-medium mb-2">
+                          <span>Q{q.id}</span>
                         </div>
-                        <h3 className="text-xl font-bold text-neutral-900">
+                        <h3 className="text-sm font-bold text-neutral-900">
                           {q.question}
                         </h3>
                       </div>
@@ -713,25 +713,25 @@ function TestScreen({
                           onShowReview(false);
                           onQuestionSelect(q.id);
                         }}
-                        className="btn btn-secondary text-sm ml-4"
+                        className="btn btn-secondary text-xs ml-2 flex-shrink-0 py-1 px-2"
                       >
                         Edit
                       </motion.button>
                     </div>
 
                     {answers[q.id] ? (
-                      <div className="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
-                        <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed">
+                      <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
+                        <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed text-xs">
                           {answers[q.id]}
                         </p>
-                        <p className="text-sm text-neutral-500 mt-4">
+                        <p className="text-xs text-neutral-500 mt-2">
                           {answers[q.id].length} karakter
                         </p>
                       </div>
                     ) : (
-                      <div className="bg-yellow-50 rounded-lg p-6 border border-yellow-200">
-                        <p className="text-yellow-800 font-medium">
-                          ⚠️ Soal ini belum dijawab
+                      <div className="bg-yellow-50 rounded-lg p-2 border border-yellow-200">
+                        <p className="text-yellow-800 font-medium text-xs">
+                          ⚠️ Belum dijawab
                         </p>
                       </div>
                     )}
@@ -740,7 +740,7 @@ function TestScreen({
               </div>
 
               {/* Submit Button */}
-              <div className="mt-8 flex justify-center">
+              <div className="mt-3 flex justify-center">
                 {Object.entries(answers).filter(
                   ([, value]) => value && value.trim().length > 0
                 ).length === questions.length ? (
@@ -749,21 +749,21 @@ function TestScreen({
                     whileTap={{ scale: 0.95 }}
                     onClick={onSubmit}
                     disabled={isSubmitting}
-                    className="btn btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                    className="btn btn-primary px-6 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                   >
                     <span>
                       {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
                     </span>
-                    <SparklesIcon className="w-5 h-5" />
+                    <SparklesIcon className="w-4 h-4" />
                   </motion.button>
                 ) : (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="bg-yellow-50 rounded-lg p-4 border border-yellow-200"
+                    className="bg-yellow-50 rounded-lg p-2 border border-yellow-200"
                   >
-                    <p className="text-yellow-800 font-medium">
-                      ⚠️ Harap isi semua soal sebelum submit
+                    <p className="text-yellow-800 font-medium text-xs">
+                      ⚠️ Isi semua soal sebelum submit
                     </p>
                   </motion.div>
                 )}
@@ -778,7 +778,7 @@ function TestScreen({
 
 function LoadingScreen() {
   return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="h-screen flex items-center justify-center">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -788,9 +788,9 @@ function LoadingScreen() {
         <motion.div
           animate={{ rotate: 360 }}
           transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-full mb-6"
+          className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-full mb-4"
         >
-          <SparklesIcon className="w-8 h-8 text-white" />
+          <SparklesIcon className="w-6 h-6 text-white" />
         </motion.div>
 
         <motion.div
@@ -798,27 +798,26 @@ function LoadingScreen() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
         >
-          <h2 className="text-2xl font-bold text-neutral-900 mb-2">
+          <h2 className="text-lg font-bold text-neutral-900 mb-2">
             Menganalisis Esai Anda...
           </h2>
-          <p className="text-neutral-600 max-w-md">
-            Teknologi AI kami sedang menganalisis jawaban Anda dengan mendalam.
-            Harap tunggu sebentar.
+          <p className="text-neutral-600 max-w-md text-xs">
+            AI kami sedang menganalisis jawaban Anda dengan mendalam.
           </p>
         </motion.div>
 
         {/* Loading dots */}
-        <div className="flex items-center justify-center gap-2 mt-6">
+        <div className="flex items-center justify-center gap-1.5 mt-4">
           {[0, 1, 2].map((i) => (
             <motion.div
               key={i}
-              animate={{ y: [-6, 0, -6] }}
+              animate={{ y: [-4, 0, -4] }}
               transition={{
                 duration: 1.4,
                 repeat: Infinity,
                 delay: i * 0.2,
               }}
-              className="w-2 h-2 bg-primary-600 rounded-full"
+              className="w-1.5 h-1.5 bg-primary-600 rounded-full"
             />
           ))}
         </div>

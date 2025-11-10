@@ -12,7 +12,6 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
-import { Button as MovingBorderButton } from "@/components/ui/moving-border";
 
 export function Hero() {
   const { user } = useAuth();
@@ -162,17 +161,13 @@ export function Hero() {
                   whileTap={{ scale: 0.95 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <MovingBorderButton
-                    as={Link}
+                  <Link
                     href="/auth"
-                    borderRadius="0.5rem"
-                    duration={2000}
-                    className="text-white flex items-center space-x-2 font-medium"
-                    containerClassName="flex"
+                    className="bg-blue-600 text-white flex items-center space-x-2 font-medium text-lg px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <span>Mulai Gratis</span>
                     <SparklesIcon className="w-5 h-5" />
-                  </MovingBorderButton>
+                  </Link>
                 </motion.div>
                 <motion.div
                   variants={buttonHoverVariants}
@@ -224,7 +219,7 @@ export function Hero() {
               key={index}
               variants={itemVariants}
               whileHover={{ y: -5 }}
-              className="card card-hover p-8 text-center"
+              className="card card-hover p-8 text-center border border-neutral-200"
             >
               <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-6">
                 <feature.icon className="w-8 h-8 text-primary-600" />

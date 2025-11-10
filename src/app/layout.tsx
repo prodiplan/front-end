@@ -37,7 +37,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className="h-full">
-      <body className={`${inter.className} h-full`}>
+      <body className={`${inter.className} h-full`} suppressHydrationWarning>
         <Providers>{children}</Providers>
       </body>
     </html>

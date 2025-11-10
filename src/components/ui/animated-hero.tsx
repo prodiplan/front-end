@@ -42,7 +42,7 @@ function Hero() {
                     key={index}
                     className="absolute font-semibold"
                     initial={{ opacity: 0, y: "-100" }}
-                    transition={{ type: "spring", stiffness: 50 }}
+                    transition={{ type: "tween", duration: 0.5, ease: "easeOut" }}
                     animate={
                       titleNumber === index
                         ? {
