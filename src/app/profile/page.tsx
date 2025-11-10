@@ -16,11 +16,10 @@ import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ChartBarIcon,
+  ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import Link from "next/link";
-import { ArrowRightOnRectangleIcon } from "@heroicons/react/24/outline";
-import { ProdiPlanNavBar } from "@/components/ui/prodiplan-navbar";
 
 interface Assessment {
   id: string;
@@ -226,13 +225,20 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <ProdiPlanNavBar
-        user={user}
-        onLogoutClick={() => setShowLogoutConfirm(true)}
-      />
-      
-      {/* Spacer untuk header yang fixed */}
-      <div className="h-16" />
+      {/* Navbar */}
+      <div className="border-b border-neutral-200 bg-white bg-opacity-50 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <Link
+            href="/dashboard"
+            className="flex items-center space-x-2 group w-fit"
+          >
+            <ArrowLeftIcon className="w-4 h-4 text-neutral-600 group-hover:text-primary-600 transition-colors" />
+            <span className="text-neutral-600 group-hover:text-primary-600 transition-colors font-medium text-xs sm:text-sm">
+              Kembali
+            </span>
+          </Link>
+        </div>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -242,7 +248,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-1 space-y-6 h-fit sticky top-20"
+            className="lg:col-span-1 space-y-6 h-fit sticky top-8"
           >
             <div className="bg-white rounded-2xl shadow-md overflow-hidden">
               {/* Header Banner */}
@@ -352,7 +358,7 @@ export default function ProfilePage() {
           >
             {!isEditing ? (
               <div
-                className={`bg-white rounded-2xl shadow-md p-6 sticky top-20 flex flex-col ${
+                className={`bg-white rounded-2xl shadow-md p-6 sticky top-8 flex flex-col ${
                   assessments.length === 0 ? "min-h-[520px]" : ""
                 }`}
               >

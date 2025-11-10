@@ -94,7 +94,7 @@ export default function DashboardPage() {
         user={user}
         onLogoutClick={() => setShowLogoutConfirm(true)}
       />
-      <main className="pt-20">
+      <main>
         {/* Hero Section */}
         <section className="relative py-20 overflow-hidden">
           {/* Background Gradient */}
