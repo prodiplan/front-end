@@ -9,6 +9,7 @@ import {
 } from "react";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
+import { API_ENDPOINTS, apiCall } from "@/lib/api";
 
 interface User {
   id: string;
@@ -42,6 +43,7 @@ interface RegisterData {
   birth_date: string;
   school_origin: string;
   dream_major: string;
+  phone_number: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -103,12 +105,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // API base URL (fallback to local storage for demo mode)
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-  const USE_DEMO_MODE =
-    !process.env.NEXT_PUBLIC_API_URL ||
-    process.env.NEXT_PUBLIC_API_URL.includes("localhost");
-
   useEffect(() => {
     const initAuth = async () => {
       const savedToken = Cookies.get("token");
@@ -131,61 +127,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchUserProfile = async (authToken: string) => {
-    const response = await fetch(`${API_URL}/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${authToken}`,
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to fetch user profile");
-    }
-
-    const data = await response.json();
-    if (data.success) {
-      setUser(data.data);
-    } else {
-      throw new Error(data.error?.message || "Authentication failed");
+    try {
+      const data = await apiCall(API_ENDPOINTS.auth.me, {}, authToken);
+      if (data.success) {
+        setUser(data.data);
+      } else {
+        throw new Error(data.error?.message || "Authentication failed");
+      }
+    } catch (error) {
+      throw new Error(
+        error instanceof Error ? error.message : "Failed to fetch user profile"
+      );
     }
   };
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // Check if we should use demo mode
-      if (USE_DEMO_MODE) {
-        // Demo mode - check against local demo users
-        const demoUser = DEMO_USERS[email];
-        if (!demoUser || demoUser.password !== password) {
-          throw new Error("Email atau password salah");
-        }
-
-        // Generate fake token for demo
-        const fakeToken = "demo-token-" + Date.now();
-
-        // Save tokens
-        Cookies.set("token", fakeToken, { expires: 7 });
-        Cookies.set("refresh_token", fakeToken, { expires: 30 });
-
-        setToken(fakeToken);
-        setUser(demoUser.user);
-
-        toast.success("Login berhasil! (Demo Mode)");
-        return;
-      }
-
-      // Real API mode
-      const response = await fetch(`${API_URL}/auth/login`, {
+      const data = await apiCall(API_ENDPOINTS.auth.login, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error?.message || "Login failed");
       }
 
@@ -210,48 +174,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     try {
-      // Demo mode - create new user locally
-      if (USE_DEMO_MODE) {
-        // For demo, we'll just accept any registration and simulate success
-        const newUser: User = {
-          id: "user-" + Date.now(),
-          email: userData.email,
-          full_name: userData.full_name,
-          birth_date: userData.birth_date,
-          school_origin: userData.school_origin,
-          dream_major: userData.dream_major,
-          avatar_url: "",
-          phone_number: "",
-          email_verified: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-
-        const fakeToken = "demo-token-" + Date.now();
-
-        // Save tokens
-        Cookies.set("token", fakeToken, { expires: 7 });
-        Cookies.set("refresh_token", fakeToken, { expires: 30 });
-
-        setToken(fakeToken);
-        setUser(newUser);
-
-        toast.success("Registrasi berhasil! (Demo Mode)");
-        return;
-      }
-
-      // Real API mode
-      const response = await fetch(`${API_URL}/auth/register`, {
+      const data = await apiCall(API_ENDPOINTS.auth.register, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify(userData),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error?.message || "Registration failed");
       }
 
@@ -274,6 +202,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
+    // Call logout endpoint if token exists
+    const token = Cookies.get("token");
+    if (token) {
+      const refresh_token = Cookies.get("refresh_token");
+      // Fire and forget - don't await logout endpoint
+      apiCall(
+        API_ENDPOINTS.auth.logout,
+        {
+          method: "POST",
+          body: JSON.stringify({ refresh_token: refresh_token || "" }),
+        },
+        token
+      ).catch((error) => {
+        console.error("Logout API call failed:", error);
+        // Continue with local logout even if API fails
+      });
+    }
+
     Cookies.remove("token");
     Cookies.remove("refresh_token");
     setToken(null);
@@ -289,17 +235,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/auth/refresh`, {
+      const data = await apiCall(API_ENDPOINTS.auth.refresh, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
         body: JSON.stringify({ refresh_token }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error("Token refresh failed");
       }
 
@@ -317,21 +258,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const response = await fetch(`${API_URL}/auth/me`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+      // Backend expects PATCH /v1/auth/profile
+      // Only allows: full_name, phone_number, avatar_url
+      const updateData: Record<string, any> = {};
+      if (userData.full_name !== undefined)
+        updateData.full_name = userData.full_name;
+      if (userData.phone_number !== undefined)
+        updateData.phone_number = userData.phone_number;
+      if (userData.avatar_url !== undefined)
+        updateData.avatar_url = userData.avatar_url;
+
+      console.log("=== Auth Provider Update Profile Debug ===");
+      console.log("Sending to API:", updateData);
+
+      const data = await apiCall(
+        API_ENDPOINTS.auth.profile,
+        {
+          method: "PATCH",
+          body: JSON.stringify(updateData),
         },
-        body: JSON.stringify(userData),
-      });
+        token
+      );
 
-      const data = await response.json();
+      console.log("Received from API:", data);
 
-      if (!response.ok || !data.success) {
+      if (!data.success) {
         throw new Error(data.error?.message || "Profile update failed");
       }
 
+      console.log("Setting user to:", data.data);
       setUser(data.data);
       toast.success("Profil berhasil diperbarui!");
     } catch (error) {

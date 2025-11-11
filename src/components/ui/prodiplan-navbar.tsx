@@ -246,7 +246,8 @@ export function ProdiPlanNavBar({
                 >
                   {user.full_name}
                 </button>
-                {/* Profile Dropdown */}
+
+                {/* Desktop Profile Dropdown */}
                 <div className="relative hidden sm:block">
                   <button
                     onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
@@ -274,6 +275,46 @@ export function ProdiPlanNavBar({
                       <button
                         onClick={onLogoutClick}
                         className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                      >
+                        Logout
+                      </button>
+                    </motion.div>
+                  )}
+                </div>
+
+                {/* Mobile Profile Button */}
+                <div className="relative sm:hidden">
+                  <button
+                    onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                    className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full transition-colors text-gray-600 hover:text-gray-900 bg-white"
+                  >
+                    <UserCircleIcon className="w-6 h-6" />
+                  </button>
+
+                  {/* Mobile Profile Dropdown Menu */}
+                  {isProfileMenuOpen && (
+                    <motion.div
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50"
+                      onClick={() => setIsProfileMenuOpen(false)}
+                    >
+                      <div className="px-4 py-2 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user.full_name}
+                        </p>
+                      </div>
+                      <Link
+                        href="/profile"
+                        className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
+                      >
+                        Profile
+                      </Link>
+                      <button
+                        onClick={onLogoutClick}
+                        className="w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm border-t border-gray-100"
                       >
                         Logout
                       </button>

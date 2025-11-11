@@ -24,6 +24,7 @@ export default function AuthPage() {
     birth_date: "",
     school_origin: "",
     dream_major: "",
+    phone_number: "",
   });
   const { login, register } = useAuth();
   const router = useRouter();
@@ -47,7 +48,9 @@ export default function AuthPage() {
     }
   };
 
-  const handleRegisterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRegisterChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value,
@@ -61,7 +64,11 @@ export default function AuthPage() {
       !formData.full_name ||
       !formData.email ||
       !formData.password ||
-      !formData.confirmPassword
+      !formData.confirmPassword ||
+      !formData.birth_date ||
+      !formData.school_origin ||
+      !formData.dream_major ||
+      !formData.phone_number
     ) {
       toast.error("Mohon lengkapi semua field");
       return;
@@ -72,8 +79,18 @@ export default function AuthPage() {
       return;
     }
 
-    if (formData.password.length < 6) {
-      toast.error("Password minimal 6 karakter");
+    if (formData.password.length < 8) {
+      toast.error(
+        "Password minimal 8 karakter dan harus mengandung huruf dan angka"
+      );
+      return;
+    }
+
+    // Check if password contains both letters and numbers
+    const hasLetters = /[A-Za-z]/.test(formData.password);
+    const hasNumbers = /[0-9]/.test(formData.password);
+    if (!hasLetters || !hasNumbers) {
+      toast.error("Password harus mengandung huruf dan angka");
       return;
     }
 
@@ -83,9 +100,10 @@ export default function AuthPage() {
         full_name: formData.full_name,
         email: formData.email,
         password: formData.password,
-        birth_date: formData.birth_date || "2000-01-01",
-        school_origin: formData.school_origin || "SMA Indonesia",
-        dream_major: formData.dream_major || "Teknik Informatika",
+        birth_date: formData.birth_date,
+        school_origin: formData.school_origin,
+        dream_major: formData.dream_major,
+        phone_number: formData.phone_number,
       };
       await register(registerData);
       router.push("/dashboard");
@@ -111,6 +129,7 @@ export default function AuthPage() {
       birth_date: "",
       school_origin: "",
       dream_major: "",
+      phone_number: "",
     });
   };
 
@@ -288,7 +307,9 @@ export default function AuthPage() {
                   />
                 </svg>
               </div>
-              <span className="text-2xl font-bold text-primary-600">ProdiPlan</span>
+              <span className="text-2xl font-bold text-primary-600">
+                ProdiPlan
+              </span>
             </Link>
 
             {/* Toggle Buttons */}
@@ -547,6 +568,111 @@ export default function AuthPage() {
                   />
                 </div>
 
+                {/* Tanggal Lahir Field */}
+                <div>
+                  <label
+                    htmlFor="birth_date"
+                    className="block text-sm font-medium text-neutral-700 mb-2"
+                  >
+                    Tanggal Lahir
+                  </label>
+                  <input
+                    id="birth_date"
+                    name="birth_date"
+                    type="date"
+                    required
+                    value={formData.birth_date}
+                    onChange={handleRegisterChange}
+                    className="input w-full"
+                  />
+                </div>
+
+                {/* Asal Sekolah Dropdown */}
+                <div>
+                  <label
+                    htmlFor="school_origin"
+                    className="block text-sm font-medium text-neutral-700 mb-2"
+                  >
+                    Asal Sekolah
+                  </label>
+                  <select
+                    id="school_origin"
+                    name="school_origin"
+                    required
+                    value={formData.school_origin}
+                    onChange={handleRegisterChange}
+                    className="input w-full"
+                  >
+                    <option value="">Pilih Sekolah</option>
+                    <option value="SMA Negeri 1">SMA Negeri 1</option>
+                    <option value="SMA Negeri 3">SMA Negeri 3</option>
+                    <option value="SMA Negeri 8">SMA Negeri 8</option>
+                    <option value="SMA Negeri 70">SMA Negeri 70</option>
+                    <option value="SMA Kanisius">SMA Kanisius</option>
+                    <option value="SMA Labschool">SMA Labschool</option>
+                    <option value="SMA Taruna Nusantara">
+                      SMA Taruna Nusantara
+                    </option>
+                    <option value="SMA Budi Luhur">SMA Budi Luhur</option>
+                    <option value="SMA Kesatuan">SMA Kesatuan</option>
+                    <option value="SMA Santa Ursula">SMA Santa Ursula</option>
+                  </select>
+                </div>
+
+                {/* Jurusan (Dream Major) Dropdown */}
+                <div>
+                  <label
+                    htmlFor="dream_major"
+                    className="block text-sm font-medium text-neutral-700 mb-2"
+                  >
+                    Jurusan Impian
+                  </label>
+                  <select
+                    id="dream_major"
+                    name="dream_major"
+                    required
+                    value={formData.dream_major}
+                    onChange={handleRegisterChange}
+                    className="input w-full"
+                  >
+                    <option value="">Pilih Jurusan</option>
+                    <option value="Teknik Informatika">
+                      Teknik Informatika
+                    </option>
+                    <option value="Teknik Mesin">Teknik Mesin</option>
+                    <option value="Teknik Sipil">Teknik Sipil</option>
+                    <option value="Kedokteran">Kedokteran</option>
+                    <option value="Hukum">Hukum</option>
+                    <option value="Akuntansi">Akuntansi</option>
+                    <option value="Manajemen Bisnis">Manajemen Bisnis</option>
+                    <option value="Psikologi">Psikologi</option>
+                    <option value="Desain Grafis">Desain Grafis</option>
+                    <option value="Administrasi Publik">
+                      Administrasi Publik
+                    </option>
+                  </select>
+                </div>
+
+                {/* Nomor Telepon Field */}
+                <div>
+                  <label
+                    htmlFor="phone_number"
+                    className="block text-sm font-medium text-neutral-700 mb-2"
+                  >
+                    Nomor Telepon
+                  </label>
+                  <input
+                    id="phone_number"
+                    name="phone_number"
+                    type="tel"
+                    required
+                    value={formData.phone_number}
+                    onChange={handleRegisterChange}
+                    className="input w-full"
+                    placeholder="+62 812-3456-7890"
+                  />
+                </div>
+
                 {/* Password Field */}
                 <div>
                   <label
@@ -565,7 +691,7 @@ export default function AuthPage() {
                       value={formData.password}
                       onChange={handleRegisterChange}
                       className="input w-full pr-10"
-                      placeholder="Minimal 6 karakter"
+                      placeholder="Minimal 8 karakter (harus ada huruf dan angka)"
                     />
                     <button
                       type="button"

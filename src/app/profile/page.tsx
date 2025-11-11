@@ -142,7 +142,7 @@ const MOCK_ASSESSMENTS: Assessment[] = [
 ];
 
 export default function ProfilePage() {
-  const { user, isLoading, logout } = useAuth();
+  const { user, isLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -163,6 +163,11 @@ export default function ProfilePage() {
     if (!isLoading && !user) {
       router.push("/auth");
     } else if (user) {
+      // Always sync formData with user whenever user changes
+      // This includes both initial load and after profile updates
+      console.log("=== useEffect: Syncing formData with user ===");
+      console.log("User data:", user);
+
       setFormData({
         id: user.id || "",
         email: user.email || "",
@@ -200,7 +205,22 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      // Prepare update data - only send fields that can be updated
+      const updateData = {
+        full_name: formData.full_name,
+        phone_number: formData.phone_number,
+      };
+
+      console.log("=== Profile Save Debug ===");
+      console.log("Saving profile with data:", updateData);
+      console.log("Current user before update:", user);
+
+      await updateProfile(updateData);
+
+      console.log("After updateProfile call, user:", user);
+
+      // After successful update, useEffect will automatically sync formData
+      // from updated user context
       setIsEditing(false);
     } catch (error) {
       console.error("Error saving profile:", error);
@@ -248,7 +268,7 @@ export default function ProfilePage() {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-1 space-y-6 h-fit sticky top-8"
+            className="lg:col-span-1 space-y-6 h-fit lg:sticky lg:top-20"
           >
             <div className="bg-white rounded-2xl shadow-md overflow-hidden">
               {/* Header Banner */}
@@ -358,7 +378,7 @@ export default function ProfilePage() {
           >
             {!isEditing ? (
               <div
-                className={`bg-white rounded-2xl shadow-md p-6 sticky top-8 flex flex-col ${
+                className={`bg-white rounded-2xl shadow-md p-6 flex flex-col ${
                   assessments.length === 0 ? "min-h-[520px]" : ""
                 }`}
               >
@@ -557,7 +577,7 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  {/* School Origin */}
+                  {/* School Origin - Read Only */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Asal Sekolah
@@ -565,18 +585,16 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       value={formData.school_origin}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          school_origin: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none text-gray-900"
-                      placeholder="Nama sekolah Anda"
+                      disabled
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Asal sekolah tidak bisa diubah (ditetapkan saat
+                      registrasi)
+                    </p>
                   </div>
 
-                  {/* Dream Major */}
+                  {/* Dream Major - Read Only */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Jurusan Pilihan
@@ -584,15 +602,13 @@ export default function ProfilePage() {
                     <input
                       type="text"
                       value={formData.dream_major}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          dream_major: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none text-gray-900"
-                      placeholder="Misal: Computer Science"
+                      disabled
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Jurusan pilihan tidak bisa diubah (ditetapkan saat
+                      registrasi)
+                    </p>
                   </div>
                 </div>
 
