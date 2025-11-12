@@ -40,6 +40,7 @@ export function ProdiPlanNavBar({
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const pathname = usePathname();
+  const resetTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   // Define navigation items based on current page and user authentication
   const getNavigationItems = (): NavItem[] => {
@@ -71,58 +72,99 @@ export function ProdiPlanNavBar({
   const items = getNavigationItems();
 
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout;
+    let scrollTimeout: NodeJS.Timeout;
+
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        setIsMobile(window.innerWidth < 768);
+      }, 150);
+    };
+
+    const handleScrollMobile = () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => {
+        // Close mobile menu when scrolling on mobile
+        if (isMobileMenuOpen && window.innerWidth < 768) {
+          setIsMobileMenuOpen(false);
+        }
+      }, 100);
     };
 
     handleResize();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+    window.addEventListener("scroll", handleScrollMobile, { passive: true });
+    return () => {
+      clearTimeout(resizeTimeout);
+      clearTimeout(scrollTimeout);
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("scroll", handleScrollMobile);
+    };
+  }, [isMobileMenuOpen]);
 
   // Set active tab based on current pathname and scroll position
   useEffect(() => {
-    // Handle scroll-based active tab for all pages
+    // Debounced scroll handler to prevent excessive updates
+    let scrollTimeout: NodeJS.Timeout;
+
     const handleScroll = () => {
+      // Clear existing timeout to debounce
+      clearTimeout(scrollTimeout);
+
       // Don't update if user is manually scrolling from a click
       if (isManualScroll) return;
 
-      const scrollPosition = window.scrollY + 150; // Increased offset
+      scrollTimeout = setTimeout(() => {
+        const scrollPosition = window.scrollY + 200; // Offset for better accuracy
 
-      // Check which section is in view - check in reverse order for accuracy
-      const testimonialElement = document.querySelector(
-        "#testimonials"
-      ) as HTMLElement | null;
-      const howItWorksElement = document.querySelector(
-        "#how-it-works"
-      ) as HTMLElement | null;
-      const featureElement = document.querySelector(
-        "#features"
-      ) as HTMLElement | null;
+        // Check which section is in view - check in reverse order for accuracy
+        const testimonialElement = document.querySelector(
+          "#testimonials"
+        ) as HTMLElement | null;
+        const howItWorksElement = document.querySelector(
+          "#how-it-works"
+        ) as HTMLElement | null;
+        const featureElement = document.querySelector(
+          "#features"
+        ) as HTMLElement | null;
 
-      if (
-        testimonialElement &&
-        scrollPosition >= testimonialElement.offsetTop
-      ) {
-        setActiveTab("Testimoni");
-      } else if (
-        howItWorksElement &&
-        scrollPosition >= howItWorksElement.offsetTop
-      ) {
-        setActiveTab("Cara Kerja");
-      } else if (featureElement && scrollPosition >= featureElement.offsetTop) {
-        setActiveTab("Fitur");
-      } else {
-        setActiveTab("Fitur"); // Default to first item
-      }
+        // Check sections in reverse order with better threshold
+        if (
+          testimonialElement &&
+          scrollPosition >= testimonialElement.offsetTop + 100
+        ) {
+          setActiveTab("Testimoni");
+        } else if (
+          howItWorksElement &&
+          scrollPosition >= howItWorksElement.offsetTop + 100
+        ) {
+          setActiveTab("Cara Kerja");
+        } else if (
+          featureElement &&
+          scrollPosition >= featureElement.offsetTop
+        ) {
+          setActiveTab("Fitur");
+        } else {
+          setActiveTab("Fitur"); // Default to first item
+        }
+      }, 50); // Small debounce to batch scroll events
     };
 
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll(); // Call once on mount
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [pathname, items, isManualScroll]);
+    return () => {
+      clearTimeout(scrollTimeout);
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, [isManualScroll, pathname]);
 
   const handleNavClick = (item: NavItem) => {
+    // Clear any existing timeout to prevent race conditions
+    if (resetTimeoutRef.current) {
+      clearTimeout(resetTimeoutRef.current);
+    }
+
     setActiveTab(item.name);
     setIsManualScroll(true);
 
@@ -132,16 +174,27 @@ export function ProdiPlanNavBar({
       if (element) {
         element.scrollIntoView({ behavior: "smooth", block: "start" });
         // Reset manual scroll flag after smooth scroll completes
-        setTimeout(() => {
+        // Use shorter timeout for more responsive behavior
+        resetTimeoutRef.current = setTimeout(() => {
           setIsManualScroll(false);
-        }, 1000);
+          resetTimeoutRef.current = null;
+        }, 700); // Reduced timeout - smooth scroll typically takes 500-800ms
       }
     }
   };
 
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (resetTimeoutRef.current) {
+        clearTimeout(resetTimeoutRef.current);
+      }
+    };
+  }, []);
+
   return (
-    <div className="fixed top-0 left-0 right-0 z-50 pt-4">
-      <div className="relative max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+    <div className="fixed top-0 left-0 right-0 z-50 pt-4 pb-2 flex justify-center">
+      <div className="relative max-w-7xl w-full px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-14 sm:h-16">
           {/* Logo */}
           <Link
@@ -189,7 +242,10 @@ export function ProdiPlanNavBar({
 
           {/* Tubelight Navigation */}
           <div className="hidden lg:block">
-            <div className="flex items-center gap-2 sm:gap-3 py-1 px-1 rounded-full bg-white shadow-sm border border-gray-100">
+            <div
+              className="flex items-center gap-2 sm:gap-3 py-3 px-2 rounded-full bg-white shadow-lg border border-gray-200 backdrop-blur-sm"
+              style={{ paddingTop: "0.875rem", paddingBottom: "0.875rem" }}
+            >
               {items.map((item, index) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.name;
@@ -200,12 +256,80 @@ export function ProdiPlanNavBar({
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
+                    className="relative"
                   >
+                    {/* Tubelight glow effect - positioned in wrapper */}
+                    {isActive && (
+                      <>
+                        {/* Top glow */}
+                        <motion.div
+                          className="absolute -top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full blur-2xl pointer-events-none"
+                          style={{ pointerEvents: "none" }}
+                          animate={{
+                            opacity: [0.5, 1, 0.5],
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+
+                        {/* Side glow left */}
+                        <motion.div
+                          className="absolute -left-2 top-1/2 -translate-y-1/2 w-4 h-14 bg-gradient-to-r from-blue-400 to-transparent rounded-full blur-xl pointer-events-none"
+                          style={{ pointerEvents: "none" }}
+                          animate={{
+                            opacity: [0.3, 0.8, 0.3],
+                            scale: [1, 1.2, 1],
+                          }}
+                          transition={{
+                            duration: 2.2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                          }}
+                        />
+
+                        {/* Side glow right */}
+                        <motion.div
+                          className="absolute -right-2 top-1/2 -translate-y-1/2 w-4 h-14 bg-gradient-to-l from-blue-400 to-transparent rounded-full blur-xl pointer-events-none"
+                          style={{ pointerEvents: "none" }}
+                          animate={{
+                            opacity: [0.3, 0.8, 0.3],
+                            scale: [1, 1.2, 1],
+                          }}
+                          transition={{
+                            duration: 2.2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: 0.2,
+                          }}
+                        />
+
+                        {/* Bottom glow */}
+                        <motion.div
+                          className="absolute -bottom-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-gradient-to-r from-transparent via-blue-400 to-transparent rounded-full blur-2xl pointer-events-none"
+                          style={{ pointerEvents: "none" }}
+                          animate={{
+                            opacity: [0.5, 1, 0.5],
+                            scale: [1, 1.1, 1],
+                          }}
+                          transition={{
+                            duration: 2,
+                            repeat: Infinity,
+                            ease: "easeInOut",
+                            delay: 0.3,
+                          }}
+                        />
+                      </>
+                    )}
+
                     <Link
                       href={item.url}
                       onClick={() => handleNavClick(item)}
                       className={cn(
-                        "relative z-10 cursor-pointer text-xs sm:text-sm font-semibold px-4 sm:px-6 py-2 rounded-full transition-colors",
+                        "relative z-10 cursor-pointer text-xs sm:text-sm font-semibold px-5 sm:px-8 py-3 rounded-full transition-all duration-300 ease-out",
                         isActive
                           ? "text-white"
                           : "text-gray-600 hover:text-gray-900"
@@ -217,11 +341,11 @@ export function ProdiPlanNavBar({
                       </span>
                       {isActive && (
                         <motion.div
-                          layoutId={`lamp-${item.name}`}
-                          className="absolute inset-0 -mx-1 -my-0.5 bg-blue-600 rounded-full -z-10"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          exit={{ opacity: 0 }}
+                          layoutId={`tubelight-${item.name}`}
+                          className="absolute inset-0 -mx-1 -my-0.5 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full -z-10"
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
                           transition={{
                             type: "spring",
                             stiffness: 300,
@@ -323,23 +447,18 @@ export function ProdiPlanNavBar({
                 </div>
               </>
             ) : (
-              <Link
-                href="/auth"
-                className="relative z-10 text-white text-xs sm:text-sm font-semibold px-3 sm:px-4 py-1.5 rounded-full transition-colors"
+              <motion.div
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
               >
-                Login
-                <motion.div
-                  className="absolute inset-0 -left-1 -right-1 bg-blue-600 rounded-full -z-10"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
-                />
-              </Link>
+                <Link
+                  href="/auth"
+                  className="relative z-10 text-blue-600 hover:text-blue-700text-xs sm:text-sm font-semibold px-4 sm:px-6 py-2.5 sm:py-3 rounded-full transition-all bg-white border-2 border-blue-600 hover:bg-blue-700 hover:text-white hover:border-white"
+                >
+                  Login
+                </Link>
+              </motion.div>
             )}
 
             {/* Mobile Menu Button - Moved next to Login */}
@@ -364,10 +483,13 @@ export function ProdiPlanNavBar({
           opacity: isMobileMenuOpen ? 1 : 0,
           height: isMobileMenuOpen ? "auto" : 0,
         }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="fixed top-14 sm:top-16 left-0 right-0 z-40 lg:hidden max-h-[calc(100vh-56px)] sm:max-h-[calc(100vh-64px)] overflow-y-auto bg-white"
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+        className="fixed top-14 sm:top-16 left-0 right-0 z-40 lg:hidden overflow-x-hidden overflow-y-auto bg-white border-t border-gray-200"
+        style={{
+          maxHeight: isMobileMenuOpen ? "calc(100vh - 3.5rem)" : "0",
+        }}
       >
-        <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 py-2 sm:py-4 space-y-0.5 sm:space-y-2">
+        <div className="max-w-7xl mx-auto w-full px-2 sm:px-6 lg:px-8 py-2 sm:py-4 space-y-0.5 sm:space-y-2">
           {items.map((item, index) => {
             const Icon = item.icon;
             const isActive = activeTab === item.name;

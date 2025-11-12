@@ -75,7 +75,10 @@ export function HowItWorks() {
   };
 
   return (
-    <section id="how-it-works" className="py-20 bg-neutral-50">
+    <section
+      id="how-it-works"
+      className="py-20 bg-neutral-50 overflow-x-hidden"
+    >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"

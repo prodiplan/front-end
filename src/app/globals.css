@@ -6,7 +6,7 @@
 
 @layer base {
   body {
-    @apply font-sans text-neutral-900 bg-neutral-50 antialiased;
+    @apply font-sans text-neutral-900 bg-white antialiased overflow-x-hidden;
     font-size: 16px; /* Minimum readable font size */
     line-height: 1.5; /* Standard line height for readability */
   }
@@ -257,6 +257,14 @@
   animation-delay: 2s;
 }
 
+.animation-delay-1000 {
+  animation-delay: 1s;
+}
+
+.animation-delay-3000 {
+  animation-delay: 3s;
+}
+
 .animation-delay-4000 {
   animation-delay: 4s;
 }
@@ -291,19 +299,49 @@
     transform 0.2s ease;
 }
 
-@keyframes shimmer {
+@keyframes smoothSlide {
   0% {
-    background-position: -468px 0;
+    opacity: 0;
+    transform: translateY(-10px);
   }
   100% {
-    background-position: 468px 0;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.loading-shimmer {
-  animation: shimmer 2s linear infinite;
-  background: linear-gradient(to right, #f0f0f0 8%, #f8f8f8 18%, #f0f0f0 33%);
-  background-size: 936px 104px;
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+    filter: blur(8px);
+  }
+  50% {
+    opacity: 1;
+    filter: blur(12px);
+  }
+}
+
+@keyframes tubelightFlicker {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.animate-smooth-slide {
+  animation: smoothSlide 0.4s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.animate-glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+.animate-tubelight-flicker {
+  animation: tubelightFlicker 2s ease-in-out infinite;
 }
 
 @media print {

@@ -127,7 +127,7 @@ export function Testimonials() {
   };
 
   return (
-    <section id="testimonials" className="py-20 bg-white">
+    <section id="testimonials" className="py-20 bg-white overflow-x-hidden">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -184,26 +184,26 @@ export function Testimonials() {
         </motion.div>
 
         {/* Testimonials Carousel */}
-        <div className="relative max-w-4xl mx-auto">
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-0">
           <motion.div
             key={currentIndex}
             initial={{ opacity: 0, x: 100 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -100 }}
             transition={{ duration: 0.5 }}
-            className="card p-8 md:p-12 border border-neutral-200"
+            className="card p-6 sm:p-8 md:p-12 border border-neutral-200"
           >
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
               {/* Avatar and Info */}
               <div className="md:col-span-1">
                 <div className="text-center md:text-left">
                   <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-white text-2xl font-bold mx-auto md:mx-0 mb-4">
                     {testimonials[currentIndex].avatar}
                   </div>
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-1">
+                  <h3 className="text-lg sm:text-xl font-semibold text-neutral-900 mb-1 line-clamp-2">
                     {testimonials[currentIndex].name}
                   </h3>
-                  <p className="text-neutral-600 mb-4">
+                  <p className="text-xs sm:text-sm text-neutral-600 mb-4">
                     {testimonials[currentIndex].role}
                   </p>
                   <div className="flex items-center justify-center md:justify-start space-x-1 mb-4">
@@ -211,21 +211,21 @@ export function Testimonials() {
                       (_, i) => (
                         <StarIcon
                           key={i}
-                          className="w-5 h-5 text-semantic-warning fill-current"
+                          className="w-4 h-4 sm:w-5 sm:h-5 text-semantic-warning fill-current"
                         />
                       )
                     )}
                   </div>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center">
-                      <AcademicCapIcon className="w-4 h-4 text-primary-600 mr-2" />
-                      <span className="text-neutral-700">
+                  <div className="space-y-2 text-xs sm:text-sm">
+                    <div className="flex items-center justify-center md:justify-start">
+                      <AcademicCapIcon className="w-4 h-4 text-primary-600 mr-2 flex-shrink-0" />
+                      <span className="text-neutral-700 line-clamp-1">
                         {testimonials[currentIndex].major}
                       </span>
                     </div>
-                    <div className="flex items-center">
-                      <BriefcaseIcon className="w-4 h-4 text-primary-600 mr-2" />
-                      <span className="text-neutral-700">
+                    <div className="flex items-center justify-center md:justify-start">
+                      <BriefcaseIcon className="w-4 h-4 text-primary-600 mr-2 flex-shrink-0" />
+                      <span className="text-neutral-700 line-clamp-1">
                         {testimonials[currentIndex].achievement}
                       </span>
                     </div>
@@ -235,11 +235,11 @@ export function Testimonials() {
 
               {/* Content */}
               <div className="md:col-span-2">
-                <blockquote className="text-lg md:text-xl text-neutral-700 leading-relaxed italic">
+                <blockquote className="text-base sm:text-lg md:text-xl text-neutral-700 leading-relaxed italic">
                   "{testimonials[currentIndex].content}"
                 </blockquote>
-                <div className="mt-6 text-sm text-neutral-600">
-                  <p className="font-medium">
+                <div className="mt-6 text-xs sm:text-sm text-neutral-600">
+                  <p className="font-medium line-clamp-1">
                     {testimonials[currentIndex].school}
                   </p>
                 </div>
@@ -247,20 +247,20 @@ export function Testimonials() {
             </div>
           </motion.div>
 
-          {/* Navigation */}
+          {/* Navigation - Repositioned for mobile */}
           <button
             onClick={prevTestimonial}
-            className="absolute -left-8 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200"
+            className="absolute -left-4 sm:-left-8 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200 z-10"
             aria-label="Previous testimonial"
           >
-            <ChevronLeftIcon className="w-6 h-6" />
+            <ChevronLeftIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button
             onClick={nextTestimonial}
-            className="absolute -right-8 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200"
+            className="absolute -right-4 sm:-right-8 top-1/2 transform -translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-full shadow-medium flex items-center justify-center text-neutral-600 hover:text-primary-600 hover:shadow-strong transition-all duration-200 z-10"
             aria-label="Next testimonial"
           >
-            <ChevronRightIcon className="w-6 h-6" />
+            <ChevronRightIcon className="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
 
           {/* Dots Indicator */}

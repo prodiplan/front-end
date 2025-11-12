@@ -6,3 +6,4 @@ export { default as SplitText, type SplitTextProps } from "./SplitText";
 export { NavBar } from "./tubelight-navbar";
 export { NavBarDemo } from "./tubelight-navbar-demo";
 export { ProdiPlanNavBar } from "./prodiplan-navbar";
+export { DashboardNavBar } from "./dashboard-navbar";

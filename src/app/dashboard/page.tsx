@@ -14,7 +14,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
-import { ProdiPlanNavBar } from "@/components/ui/prodiplan-navbar";
+import { DashboardNavBar } from "@/components/ui/dashboard-navbar";
 import { Footer } from "@/components/layout/footer";
 
 export default function DashboardPage() {
@@ -89,20 +89,20 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <ProdiPlanNavBar
+    <div className="min-h-screen bg-white">
+      <DashboardNavBar
         user={user}
         onLogoutClick={() => setShowLogoutConfirm(true)}
       />
-      <main>
+      <main className="mt-12 bg-white">
         {/* Hero Section */}
-        <section className="relative py-20 overflow-hidden">
+        <section className="relative py-20 overflow-hidden bg-white">
           {/* Background Gradient */}
           <div className="absolute inset-0 bg-white" />
 
           {/* Decorative Elements */}
-          <div className="absolute top-20 left-10 w-72 h-72 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
-          <div className="absolute top-40 right-10 w-72 h-72 bg-secondary-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
+          <div className="absolute top-20 -left-32 w-72 h-72 bg-primary-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob" />
+          <div className="absolute top-40 -right-32 w-72 h-72 bg-secondary-200 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-blob animation-delay-2000" />
 
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             <motion.div
@@ -197,7 +197,7 @@ export default function DashboardPage() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 px-4 sm:px-6 lg:px-8">
+        <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
           <div className="mx-auto max-w-7xl">
             <motion.div
               initial={{ opacity: 0 }}
@@ -325,8 +325,8 @@ export default function DashboardPage() {
         <section className="relative py-20 overflow-hidden">
           <div className="absolute inset-0 bg-primary-600" />
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-10 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob" />
-            <div className="absolute -bottom-8 right-10 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
+            <div className="absolute top-0 -left-20 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob" />
+            <div className="absolute -bottom-8 -right-20 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
           </div>
 
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
