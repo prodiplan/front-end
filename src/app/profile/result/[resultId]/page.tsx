@@ -13,6 +13,7 @@ import {
   ArrowTrendingUpIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
+import { useGradingSession, useGradingResult } from "@/hooks/useGradingSession";
 
 interface AnalysisReport {
   summary: string;
@@ -40,64 +41,12 @@ interface AssessmentDetail {
 export default function ResultDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const resultId = params.resultId as string;
-  const [isLoading, setIsLoading] = useState(true);
-  const [result, setResult] = useState<AssessmentDetail | null>(null);
+  const sessionId = params.resultId as string;
+  
+  const { data: session, isLoading: isSessionLoading } = useGradingSession(sessionId);
+  const { data: resultData, isLoading: isResultLoading } = useGradingResult(sessionId);
 
-  useEffect(() => {
-    // Simulate fetching data
-    setTimeout(() => {
-      setResult({
-        id: resultId,
-        target_major: "Computer Science",
-        final_score: 78,
-        readiness_level: "Siap",
-        completed_at: "2024-11-01T11:30:00Z",
-        analysis_report: {
-          summary:
-            "Hasil analisis menunjukkan bahwa Anda memiliki kesiapan yang baik untuk melanjutkan studi Computer Science. Motivasi Anda sangat kuat dan terlihat dari jawaban-jawaban yang detail dan penuh refleksi. Anda menunjukkan pemahaman yang solid tentang tantangan yang akan dihadapi serta langkah-langkah konkret yang sudah atau akan dilakukan untuk mempersiapkan diri.",
-          strengths: [
-            "Motivasi yang sangat kuat dan jelas untuk mengejar Computer Science",
-            "Pemahaman dasar programming yang solid dengan pengalaman praktis",
-            "Kemampuan problem-solving yang baik dan logika yang terstruktur",
-            "Komitmen tinggi terhadap pembelajaran berkelanjutan dan pengembangan diri",
-          ],
-          weaknesses: [
-            "Masih perlu memperdalam pemahaman tentang algoritma dan struktur data",
-            "Pengalaman proyek kolaboratif masih terbatas",
-            "Perlu meningkatkan penguasaan matematika diskrit dan teori komputasi",
-          ],
-          recommendations: [
-            "Ikuti kursus online tentang algoritma dan struktur data (misal: Coursera, EdX)",
-            "Partisipasi dalam kompetisi programming seperti Codeforces atau ICPC",
-            "Buat proyek portfolio yang menunjukkan skill Anda kepada industri",
-            "Tingkatkan pemahaman matematika melalui latihan soal reguler",
-            "Cari mentor atau bergabung dengan komunitas programming untuk belajar dari yang lebih berpengalaman",
-          ],
-          key_insights: {
-            motivation_score: 85,
-            technical_understanding: 75,
-            career_alignment: 78,
-          },
-          personality_traits: {
-            analytical_thinking: "high",
-            problem_solving: "high",
-            creativity: "medium",
-            teamwork: "medium",
-            communication: "high",
-          },
-          career_suggestions: [
-            "Software Engineer",
-            "Data Scientist",
-            "Product Manager",
-            "DevOps Engineer",
-            "AI/ML Engineer",
-          ],
-        },
-      });
-      setIsLoading(false);
-    }, 1000);
-  }, [resultId]);
+  const isLoading = isSessionLoading || isResultLoading;
 
   if (isLoading) {
     return (
@@ -113,7 +62,7 @@ export default function ResultDetailPage() {
     );
   }
 
-  if (!result) {
+  if (!session || !resultData) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -125,6 +74,15 @@ export default function ResultDetailPage() {
       </div>
     );
   }
+
+  const result: AssessmentDetail = {
+    id: resultData.id,
+    target_major: session.metadata?.target_major || "Unknown Major",
+    final_score: resultData.overall_score,
+    readiness_level: resultData.readiness_level,
+    completed_at: resultData.created_at, // Using created_at of result as completion time
+    analysis_report: resultData.analysis,
+  };
 
   const getReadinessColor = (level: string) => {
     switch (level) {

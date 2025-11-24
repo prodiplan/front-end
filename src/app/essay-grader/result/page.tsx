@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -11,97 +11,40 @@ import {
   LightBulbIcon,
   DocumentTextIcon,
   ArrowRightIcon,
+  SparklesIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
+import { useGradingResult } from "@/hooks/useGradingSession";
 
 interface AnalysisResult {
-  overall_score: number;
-  readiness_level: "Siap" | "Cukup Siap" | "Perlu Persiapan";
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
-  detailed_analysis: string;
-  question_scores?: {
-    question: number;
-    score: number;
-    feedback: string;
-  }[];
-  detailed_insights?: string[];
+  final_score: number;
+  readiness_level: string;
+  analysis_report: {
+    strengths: string;
+    weaknesses: string;
+    recommendations: string;
+    summary: string;
+    key_insights: any;
+    career_suggestions: string[];
+  };
 }
 
-// Mock analysis result - dalam implementasi nyata akan dari API
-const mockAnalysisResult: AnalysisResult = {
-  overall_score: 82,
-  readiness_level: "Siap",
-  strengths: [
-    "Memiliki motivasi yang kuat dan jelas",
-    "Menunjukkan self-awareness yang baik",
-    "Rencana persiapan yang terstruktur",
-    "Visi karir yang realistis dan terukur",
-  ],
-  weaknesses: [
-    "Perlu memperdalam pengetahuan tentang kurikulum jurusan",
-    "Pengalaman praktik masih terbatas",
-    "Belum banyak mengikuti kegiatan ekstrakurikuler terkait",
-  ],
-  recommendations: [
-    "Ikuti webinar dan workshop tentang jurusan pilihan Anda",
-    "Cari mentor atau mentor dari jurusan tersebut",
-    "Tingkatkan kemampuan akademik terutama di mata pelajaran dasar",
-    "Aktif di organisasi yang relevan dengan minat Anda",
-    "Buat portfolio atau project sederhana untuk menunjukkan komitmen",
-  ],
-  detailed_analysis:
-    "Berdasarkan analisis mendalam atas jawaban Anda, kami melihat bahwa Anda menunjukkan kesiapan yang baik untuk mengambil jurusan pilihan Anda. Motivasi Anda sangat jelas dan terukur, dengan pemahaman yang realistis tentang tantangan yang akan dihadapi. Namun, terdapat beberapa area yang dapat ditingkatkan untuk memaksimalkan kesuksesan Anda.",
-  question_scores: [
-    {
-      question: 1,
-      score: 85,
-      feedback:
-        "Jawaban menunjukkan pemahaman mendalam tentang jurusan pilihan",
-    },
-    {
-      question: 2,
-      score: 80,
-      feedback: "Motivasi dijelaskan dengan baik, namun perlu lebih spesifik",
-    },
-    {
-      question: 3,
-      score: 82,
-      feedback: "Pengalaman relevan sudah baik, tambahkan lebih banyak contoh",
-    },
-    {
-      question: 4,
-      score: 85,
-      feedback: "Rencana persiapan terstruktur dan realistis",
-    },
-    {
-      question: 5,
-      score: 78,
-      feedback: "Pemahaman tantangan ada, tapi kurang mendalam",
-    },
-  ],
-  detailed_insights: [
-    "Potensi akademik Anda sangat baik, terutama dalam kemampuan analitis",
-    "Kepribadian Anda cocok untuk kolaborasi dalam lingkungan akademik",
-    "Pastikan terus mengikuti perkembangan kurikulum di jurusan pilihan",
-    "Manfaatkan kesempatan magang atau penelitian untuk memperkuat portofolio",
-    "Jangan ragu untuk mencari bantuan dari senior atau mentor profesional",
-  ],
-};
-
 export default function ResultPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const sessionId = searchParams.get("sessionId");
+
+  const { data: resultData, isLoading: isResultLoading, error } = useGradingResult(sessionId || undefined);
 
   useEffect(() => {
-    if (!isLoading && !user) {
+    if (!isAuthLoading && !user) {
       router.push("/auth");
     }
-  }, [user, isLoading, router]);
+  }, [user, isAuthLoading, router]);
 
-  if (isLoading) {
+  if (isAuthLoading || isResultLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center">
@@ -118,20 +61,51 @@ export default function ResultPage() {
     return null;
   }
 
-  const result = mockAnalysisResult;
-  const isReadyLevel = result.readiness_level === "Siap";
+  if (error || !resultData) {
+     return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center max-w-md px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+            <LightBulbIcon className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">Gagal Memuat Hasil</h2>
+          <p className="text-neutral-600 mb-6">
+            Maaf, kami tidak dapat memuat hasil analisis Anda saat ini. Silakan coba lagi nanti atau hubungi dukungan jika masalah berlanjut.
+          </p>
+          <Link href="/dashboard" className="btn btn-primary">
+            Kembali ke Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const result = resultData;
+  // Parse strings if they are comma separated or similar, assuming API returns strings based on interface
+  // But interface says string. Let's assume they are formatted text or we need to split them.
+  // The mock data had arrays. The API spec says "strengths": "Motivasi yang kuat..." (string).
+  // I'll treat them as single strings or try to split by newline/comma if appropriate, or just display as is.
+  // For now, I'll wrap them in array if needed to match the UI loop.
+
+  const strengths = result.analysis_report.strengths ? [result.analysis_report.strengths] : [];
+  const weaknesses = result.analysis_report.weaknesses ? [result.analysis_report.weaknesses] : [];
+  const recommendations = result.analysis_report.recommendations ? [result.analysis_report.recommendations] : [];
+  const detailed_insights = result.analysis_report.key_insights ? Object.entries(result.analysis_report.key_insights).map(([k, v]) => `${k}: ${v}`) : [];
+
+  const isReadyLevel = result.readiness_level === "ready";
   const scoreColorClass = isReadyLevel
     ? "bg-green-600"
-    : result.readiness_level === "Cukup Siap"
+    : result.readiness_level === "needs_improvement" // Assuming this value
       ? "bg-yellow-600"
       : "bg-red-600";
 
   // For styling purposes
   const getScoreCardClasses = () => {
     if (isReadyLevel) return "bg-green-600";
-    if (result.readiness_level === "Cukup Siap") return "bg-yellow-600";
-    return "bg-red-600";
+    if (result.readiness_level === "needs_improvement") return "bg-yellow-600";
+    return "bg-red-600"; // not_ready
   };
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -248,7 +222,7 @@ export default function ResultPage() {
                     className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white border-opacity-30 flex items-center justify-center mb-4"
                   >
                     <span className="text-4xl md:text-5xl font-bold">
-                      {result.overall_score}
+                      {result.final_score}
                     </span>
                   </motion.div>
                   <p className="text-white text-opacity-90 font-medium">
@@ -290,7 +264,7 @@ export default function ResultPage() {
               {/* Quote */}
               <motion.div variants={itemVariants} className="text-center">
                 <p className="text-white text-opacity-90 italic text-base md:text-lg leading-relaxed max-w-2xl mx-auto">
-                  "{result.detailed_analysis}"
+                  "{result.analysis_report.summary}"
                 </p>
               </motion.div>
             </div>
@@ -316,7 +290,7 @@ export default function ResultPage() {
               animate="visible"
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
-              {result.strengths.map((strength, index) => (
+              {strengths.map((strength, index) => (
                 <motion.div
                   key={index}
                   variants={itemVariants}
@@ -349,7 +323,7 @@ export default function ResultPage() {
               animate="visible"
               className="grid grid-cols-1 md:grid-cols-2 gap-4"
             >
-              {result.weaknesses.map((weakness, index) => (
+              {weaknesses.map((weakness, index) => (
                 <motion.div
                   key={index}
                   variants={itemVariants}
@@ -362,68 +336,11 @@ export default function ResultPage() {
             </motion.div>
           </motion.div>
 
-          {/* Question Scores Section */}
-          {result.question_scores && result.question_scores.length > 0 && (
-            <motion.div
-              variants={itemVariants}
-              className="bg-blue-50 rounded-2xl shadow-md p-8 mb-8 border border-blue-200"
-            >
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                  <ChartBarIcon className="w-6 h-6 text-blue-600" />
-                </div>
-                <h2 className="text-2xl font-bold text-neutral-900">
-                  Analisis Per Pertanyaan
-                </h2>
-              </div>
-
-              <motion.div
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                className="space-y-4"
-              >
-                {result.question_scores.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    variants={itemVariants}
-                    className="bg-white rounded-lg p-5 border border-blue-200"
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex-1">
-                        <h3 className="font-semibold text-neutral-900 mb-1">
-                          Pertanyaan {item.question}
-                        </h3>
-                        <p className="text-sm text-neutral-600">
-                          {item.feedback}
-                        </p>
-                      </div>
-                      <div className="ml-4 flex-shrink-0">
-                        <div className="flex items-center justify-center w-16 h-16 bg-blue-100 rounded-lg">
-                          <div className="text-center">
-                            <div className="text-xl font-bold text-blue-600">
-                              {item.score}
-                            </div>
-                            <div className="text-xs text-blue-600">/100</div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    {/* Score Bar */}
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-                        style={{ width: `${item.score}%` }}
-                      />
-                    </div>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-          )}
+          {/* Question Scores Section - Removed as API doesn't provide it yet */}
+          
 
           {/* Detailed Insights Section */}
-          {result.detailed_insights && result.detailed_insights.length > 0 && (
+          {detailed_insights.length > 0 && (
             <motion.div
               variants={itemVariants}
               className="bg-purple-50 rounded-2xl shadow-md p-8 mb-8 border border-purple-200"
@@ -443,7 +360,7 @@ export default function ResultPage() {
                 animate="visible"
                 className="space-y-3"
               >
-                {result.detailed_insights.map((insight, index) => (
+                {detailed_insights.map((insight, index) => (
                   <motion.div
                     key={index}
                     variants={itemVariants}
@@ -483,7 +400,7 @@ export default function ResultPage() {
               animate="visible"
               className="space-y-3"
             >
-              {result.recommendations.map((recommendation, index) => (
+              {recommendations.map((recommendation, index) => (
                 <motion.div
                   key={index}
                   variants={itemVariants}

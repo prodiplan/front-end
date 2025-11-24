@@ -20,12 +20,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import Link from "next/link";
+import { useGradingSessions } from "@/hooks/useGradingSession";
 
 interface Assessment {
   id: string;
   session_id: string;
   target_major: string;
-  status: "completed" | "analyzing";
+  status: string;
   final_score?: number;
   readiness_level?: string;
   created_at: string;
@@ -43,111 +44,26 @@ interface ProfileData {
   avatar_url?: string;
 }
 
-// Mock data for assessments
-const MOCK_ASSESSMENTS: Assessment[] = [
-  {
-    id: "1",
-    session_id: "session-1",
-    target_major: "Computer Science",
-    status: "completed" as const,
-    final_score: 85,
-    readiness_level: "Siap",
-    created_at: "2024-11-10T10:00:00Z",
-    completed_at: "2024-11-10T11:30:00Z",
-  },
-  {
-    id: "2",
-    session_id: "session-2",
-    target_major: "Business Administration",
-    status: "completed" as const,
-    final_score: 78,
-    readiness_level: "Siap",
-    created_at: "2024-11-09T14:30:00Z",
-    completed_at: "2024-11-09T16:00:00Z",
-  },
-  {
-    id: "3",
-    session_id: "session-3",
-    target_major: "Engineering",
-    status: "completed" as const,
-    final_score: 92,
-    readiness_level: "Sangat Siap",
-    created_at: "2024-11-08T09:00:00Z",
-    completed_at: "2024-11-08T10:45:00Z",
-  },
-  {
-    id: "4",
-    session_id: "session-4",
-    target_major: "Medicine",
-    status: "completed" as const,
-    final_score: 88,
-    readiness_level: "Siap",
-    created_at: "2024-11-07T15:20:00Z",
-    completed_at: "2024-11-07T17:10:00Z",
-  },
-  {
-    id: "5",
-    session_id: "session-5",
-    target_major: "Psychology",
-    status: "completed" as const,
-    final_score: 81,
-    readiness_level: "Siap",
-    created_at: "2024-11-06T11:00:00Z",
-    completed_at: "2024-11-06T12:30:00Z",
-  },
-  {
-    id: "6",
-    session_id: "session-6",
-    target_major: "Law",
-    status: "completed" as const,
-    final_score: 79,
-    readiness_level: "Siap",
-    created_at: "2024-11-05T13:15:00Z",
-    completed_at: "2024-11-05T14:45:00Z",
-  },
-  {
-    id: "7",
-    session_id: "session-7",
-    target_major: "Economics",
-    status: "completed" as const,
-    final_score: 87,
-    readiness_level: "Siap",
-    created_at: "2024-11-04T10:30:00Z",
-    completed_at: "2024-11-04T12:00:00Z",
-  },
-  {
-    id: "8",
-    session_id: "session-8",
-    target_major: "Architecture",
-    status: "completed" as const,
-    final_score: 90,
-    readiness_level: "Sangat Siap",
-    created_at: "2024-11-03T14:00:00Z",
-    completed_at: "2024-11-03T15:30:00Z",
-  },
-  {
-    id: "9",
-    session_id: "session-9",
-    target_major: "Arts",
-    status: "analyzing" as const,
-    created_at: "2024-11-02T11:45:00Z",
-  },
-  {
-    id: "10",
-    session_id: "session-10",
-    target_major: "Nursing",
-    status: "analyzing" as const,
-    created_at: "2024-11-01T16:20:00Z",
-  },
-];
-
 export default function ProfilePage() {
   const { user, isLoading, logout, updateProfile } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [assessments] = useState(MOCK_ASSESSMENTS);
+  
+  const { data: sessionsData, isLoading: isSessionsLoading } = useGradingSessions({ limit: 20 });
+  
+  const assessments: Assessment[] = sessionsData?.sessions.map(session => ({
+    id: session.id,
+    session_id: session.id,
+    target_major: session.target_major,
+    status: session.status,
+    final_score: session.current_score,
+    readiness_level: session.status === 'completed' ? 'Selesai' : 'Dalam Proses', // Placeholder
+    created_at: session.created_at,
+    completed_at: session.expires_at
+  })) || [];
+
   const [formData, setFormData] = useState<ProfileData>({
     id: "",
     email: "",

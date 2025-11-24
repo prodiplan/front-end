@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
 import Link from "next/link";
+import { useCreateSession, useSendMessage, useCompleteSession } from "@/hooks/useGradingSession";
 
 interface Question {
   id: number;
@@ -71,6 +72,11 @@ export default function EssayGraderPage() {
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  
+  const createSessionMutation = useCreateSession();
+  const sendMessageMutation = useSendMessage();
+  const completeSessionMutation = useCompleteSession();
+  const [sessionId, setSessionId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -122,16 +128,55 @@ export default function EssayGraderPage() {
     }
   };
 
+  const handleStart = async () => {
+    try {
+      const session = await createSessionMutation.mutateAsync({
+        target_major: user?.dream_major || "General",
+        max_questions: questions.length,
+        session_duration_minutes: 15
+      });
+      setSessionId(session.id);
+      setCurrentStep("test");
+    } catch (error) {
+      console.error("Failed to create session:", error);
+      // Ideally show a toast or error message here
+    }
+  };
+
   const handleSubmitTest = async () => {
+    if (!sessionId) {
+        console.error("No session ID found");
+        return;
+    }
     setIsSubmitting(true);
     setCurrentStep("loading");
 
-    // Simulate API call to submit test
     try {
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Send all answers sequentially
+      for (const q of questions) {
+        const answer = answers[q.id] || "";
+        
+        // Send question context
+        await sendMessageMutation.mutateAsync({
+            sessionId,
+            data: { message_type: 'question', content: q.question }
+        });
+        
+        // Send answer
+        await sendMessageMutation.mutateAsync({
+            sessionId,
+            data: { message_type: 'answer', content: answer || "Tidak dijawab" }
+        });
+      }
 
-      // Navigate to confirmation page
-      router.push("/essay-grader/confirmation");
+      // Complete session
+      await completeSessionMutation.mutateAsync({
+          sessionId,
+          data: { final_score: 0, readiness_level: "analyzing" }
+      });
+
+      // Navigate to result page
+      router.push(`/profile/result/${sessionId}`);
     } catch (error) {
       console.error("Error submitting test:", error);
       setCurrentStep("test");
@@ -161,7 +206,7 @@ export default function EssayGraderPage() {
       {currentStep === "intro" && (
         <IntroScreen
           user={user}
-          onStart={() => setCurrentStep("test")}
+          onStart={handleStart}
           onBack={() => router.push("/dashboard")}
         />
       )}
