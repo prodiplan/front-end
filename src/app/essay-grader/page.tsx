@@ -12,7 +12,11 @@ import {
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
 import Link from "next/link";
-import { useCreateSession, useSendMessage, useCompleteSession } from "@/hooks/useGradingSession";
+import {
+  useCreateSession,
+  useSendMessage,
+  useCompleteSession,
+} from "@/hooks/useGradingSession";
 
 interface Question {
   id: number;
@@ -72,7 +76,7 @@ export default function EssayGraderPage() {
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReview, setShowReview] = useState(false);
-  
+
   const createSessionMutation = useCreateSession();
   const sendMessageMutation = useSendMessage();
   const completeSessionMutation = useCompleteSession();
@@ -133,7 +137,7 @@ export default function EssayGraderPage() {
       const session = await createSessionMutation.mutateAsync({
         target_major: user?.dream_major || "General",
         max_questions: questions.length,
-        session_duration_minutes: 15
+        session_duration_minutes: 15,
       });
       setSessionId(session.id);
       setCurrentStep("test");
@@ -145,8 +149,8 @@ export default function EssayGraderPage() {
 
   const handleSubmitTest = async () => {
     if (!sessionId) {
-        console.error("No session ID found");
-        return;
+      console.error("No session ID found");
+      return;
     }
     setIsSubmitting(true);
     setCurrentStep("loading");
@@ -155,24 +159,24 @@ export default function EssayGraderPage() {
       // Send all answers sequentially
       for (const q of questions) {
         const answer = answers[q.id] || "";
-        
+
         // Send question context
         await sendMessageMutation.mutateAsync({
-            sessionId,
-            data: { message_type: 'question', content: q.question }
+          sessionId,
+          data: { message_type: "question", content: q.question },
         });
-        
+
         // Send answer
         await sendMessageMutation.mutateAsync({
-            sessionId,
-            data: { message_type: 'answer', content: answer || "Tidak dijawab" }
+          sessionId,
+          data: { message_type: "answer", content: answer || "Tidak dijawab" },
         });
       }
 
       // Complete session
       await completeSessionMutation.mutateAsync({
-          sessionId,
-          data: { final_score: 0, readiness_level: "analyzing" }
+        sessionId,
+        data: { final_score: 0, readiness_level: "analyzing" },
       });
 
       // Navigate to result page

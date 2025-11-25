@@ -42,9 +42,11 @@ export default function ResultDetailPage() {
   const params = useParams();
   const router = useRouter();
   const sessionId = params.resultId as string;
-  
-  const { data: session, isLoading: isSessionLoading } = useGradingSession(sessionId);
-  const { data: resultData, isLoading: isResultLoading } = useGradingResult(sessionId);
+
+  const { data: session, isLoading: isSessionLoading } =
+    useGradingSession(sessionId);
+  const { data: resultData, isLoading: isResultLoading } =
+    useGradingResult(sessionId);
 
   const isLoading = isSessionLoading || isResultLoading;
 

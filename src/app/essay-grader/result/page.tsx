@@ -36,7 +36,11 @@ export default function ResultPage() {
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
 
-  const { data: resultData, isLoading: isResultLoading, error } = useGradingResult(sessionId || undefined);
+  const {
+    data: resultData,
+    isLoading: isResultLoading,
+    error,
+  } = useGradingResult(sessionId || undefined);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -62,15 +66,18 @@ export default function ResultPage() {
   }
 
   if (error || !resultData) {
-     return (
+    return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center max-w-md px-4">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
             <LightBulbIcon className="w-8 h-8 text-red-600" />
           </div>
-          <h2 className="text-xl font-bold text-neutral-900 mb-2">Gagal Memuat Hasil</h2>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">
+            Gagal Memuat Hasil
+          </h2>
           <p className="text-neutral-600 mb-6">
-            Maaf, kami tidak dapat memuat hasil analisis Anda saat ini. Silakan coba lagi nanti atau hubungi dukungan jika masalah berlanjut.
+            Maaf, kami tidak dapat memuat hasil analisis Anda saat ini. Silakan
+            coba lagi nanti atau hubungi dukungan jika masalah berlanjut.
           </p>
           <Link href="/dashboard" className="btn btn-primary">
             Kembali ke Dashboard
@@ -87,10 +94,20 @@ export default function ResultPage() {
   // I'll treat them as single strings or try to split by newline/comma if appropriate, or just display as is.
   // For now, I'll wrap them in array if needed to match the UI loop.
 
-  const strengths = result.analysis_report.strengths ? [result.analysis_report.strengths] : [];
-  const weaknesses = result.analysis_report.weaknesses ? [result.analysis_report.weaknesses] : [];
-  const recommendations = result.analysis_report.recommendations ? [result.analysis_report.recommendations] : [];
-  const detailed_insights = result.analysis_report.key_insights ? Object.entries(result.analysis_report.key_insights).map(([k, v]) => `${k}: ${v}`) : [];
+  const strengths = result.analysis_report.strengths
+    ? [result.analysis_report.strengths]
+    : [];
+  const weaknesses = result.analysis_report.weaknesses
+    ? [result.analysis_report.weaknesses]
+    : [];
+  const recommendations = result.analysis_report.recommendations
+    ? [result.analysis_report.recommendations]
+    : [];
+  const detailed_insights = result.analysis_report.key_insights
+    ? Object.entries(result.analysis_report.key_insights).map(
+        ([k, v]) => `${k}: ${v}`
+      )
+    : [];
 
   const isReadyLevel = result.readiness_level === "ready";
   const scoreColorClass = isReadyLevel
@@ -105,7 +122,6 @@ export default function ResultPage() {
     if (result.readiness_level === "needs_improvement") return "bg-yellow-600";
     return "bg-red-600"; // not_ready
   };
-
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -337,7 +353,6 @@ export default function ResultPage() {
           </motion.div>
 
           {/* Question Scores Section - Removed as API doesn't provide it yet */}
-          
 
           {/* Detailed Insights Section */}
           {detailed_insights.length > 0 && (

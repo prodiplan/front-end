@@ -19,12 +19,15 @@ export const API_ENDPOINTS = {
     createSession: `${API_BASE_URL}/grading-sessions`,
     getSession: (id: string) => `${API_BASE_URL}/grading-sessions/${id}`,
     listSessions: `${API_BASE_URL}/grading-sessions`,
-    completeSession: (id: string) => `${API_BASE_URL}/grading-sessions/${id}/complete`,
+    completeSession: (id: string) =>
+      `${API_BASE_URL}/grading-sessions/${id}/complete`,
   },
   // Messages endpoints
   messages: {
-    list: (sessionId: string) => `${API_BASE_URL}/grading-sessions/${sessionId}/messages`,
-    send: (sessionId: string) => `${API_BASE_URL}/grading-sessions/${sessionId}/messages`,
+    list: (sessionId: string) =>
+      `${API_BASE_URL}/grading-sessions/${sessionId}/messages`,
+    send: (sessionId: string) =>
+      `${API_BASE_URL}/grading-sessions/${sessionId}/messages`,
   },
   // Grading Results endpoints
   results: {

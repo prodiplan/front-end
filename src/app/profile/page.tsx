@@ -50,19 +50,22 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  
-  const { data: sessionsData, isLoading: isSessionsLoading } = useGradingSessions({ limit: 20 });
-  
-  const assessments: Assessment[] = sessionsData?.sessions.map(session => ({
-    id: session.id,
-    session_id: session.id,
-    target_major: session.target_major,
-    status: session.status,
-    final_score: session.current_score,
-    readiness_level: session.status === 'completed' ? 'Selesai' : 'Dalam Proses', // Placeholder
-    created_at: session.created_at,
-    completed_at: session.expires_at
-  })) || [];
+
+  const { data: sessionsData, isLoading: isSessionsLoading } =
+    useGradingSessions({ limit: 20 });
+
+  const assessments: Assessment[] =
+    sessionsData?.sessions.map((session) => ({
+      id: session.id,
+      session_id: session.id,
+      target_major: session.target_major,
+      status: session.status,
+      final_score: session.current_score,
+      readiness_level:
+        session.status === "completed" ? "Selesai" : "Dalam Proses", // Placeholder
+      created_at: session.created_at,
+      completed_at: session.expires_at,
+    })) || [];
 
   const [formData, setFormData] = useState<ProfileData>({
     id: "",

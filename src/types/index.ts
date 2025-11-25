@@ -16,7 +16,7 @@ export interface GradingSession {
   id: string;
   user_id: string;
   target_major: string;
-  status: 'active' | 'completed' | 'expired';
+  status: "active" | "completed" | "expired";
   current_score: number;
   threshold_score: number;
   question_count: number;
@@ -31,7 +31,7 @@ export interface GradingSession {
 export interface SessionMessage {
   id: string;
   session_id: string;
-  message_type: 'question' | 'answer';
+  message_type: "question" | "answer";
   content: string;
   score?: number;
   is_analyzed: boolean;
@@ -42,7 +42,7 @@ export interface GradingResult {
   id: string;
   session_id: string;
   final_score: number;
-  readiness_level: 'ready' | 'not_ready' | 'needs_improvement'; // Adjust based on actual values
+  readiness_level: "ready" | "not_ready" | "needs_improvement"; // Adjust based on actual values
   analysis_report: {
     summary: string;
     recommendations: string;
