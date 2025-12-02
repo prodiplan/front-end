@@ -1,18 +1,19 @@
 // API Configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4001";
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "https://prodiplan.my.id";
 
 export const API_ENDPOINTS = {
-  // Auth endpoints - v1/auth prefix
+  // Auth endpoints - direct path routing without /api/v1 prefix
   auth: {
-    register: `${API_BASE_URL}/v1/auth/register`,
-    login: `${API_BASE_URL}/v1/auth/login`,
-    refresh: `${API_BASE_URL}/v1/auth/refresh`,
-    me: `${API_BASE_URL}/v1/auth/me`,
-    profile: `${API_BASE_URL}/v1/auth/profile`,
-    logout: `${API_BASE_URL}/v1/auth/logout`,
-    forgotPassword: `${API_BASE_URL}/v1/auth/forgot-password`,
-    resetPassword: `${API_BASE_URL}/v1/auth/reset-password`,
-    deleteUser: `${API_BASE_URL}/v1/auth/user`,
+    register: `${API_BASE_URL}/auth/register`,
+    login: `${API_BASE_URL}/auth/login`,
+    refresh: `${API_BASE_URL}/auth/refresh`,
+    me: `${API_BASE_URL}/auth/me`,
+    profile: `${API_BASE_URL}/auth/profile`,
+    logout: `${API_BASE_URL}/auth/logout`,
+    forgotPassword: `${API_BASE_URL}/auth/forgot-password`,
+    resetPassword: `${API_BASE_URL}/auth/reset-password`,
+    deleteUser: `${API_BASE_URL}/auth/user`,
   },
   // Grading Session endpoints
   grading: {
@@ -34,12 +35,6 @@ export const API_ENDPOINTS = {
     get: (sessionId: string) => `${API_BASE_URL}/grading-results/${sessionId}`,
     list: `${API_BASE_URL}/grading-results`,
   },
-  // Token verification endpoint
-  token: {
-    verify: `${API_BASE_URL}/v1/token/verify`,
-    verifyHeader: `${API_BASE_URL}/v1/token/verify-header`,
-    health: `${API_BASE_URL}/v1/token/health`,
-  },
 };
 
 /**
@@ -50,9 +45,9 @@ export async function apiCall(
   options: RequestInit = {},
   token?: string
 ) {
-  const headers = {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    ...options.headers,
+    ...(options.headers as Record<string, string>),
   };
 
   if (token) {
@@ -64,10 +59,17 @@ export async function apiCall(
     headers,
   });
 
-  const data = await response.json();
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    throw new Error(`Failed to parse response: ${response.statusText}`);
+  }
 
   if (!response.ok) {
-    throw new Error(data.error?.message || `API Error: ${response.status}`);
+    const errorMessage =
+      data.error?.message || data.message || `API Error: ${response.status}`;
+    throw new Error(errorMessage);
   }
 
   return data;

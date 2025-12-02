@@ -1,86 +1,109 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
   ClockIcon,
   SparklesIcon,
+  ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
 import Link from "next/link";
 import {
   useCreateSession,
-  useSendMessage,
   useCompleteSession,
+  useSendMessage,
+  useGradingSessions,
 } from "@/hooks/useGradingSession";
+import { gradingService } from "@/lib/services/grading";
+import {
+  createSocketConnection,
+  joinSession,
+  onQuestion,
+  onScoreUpdate,
+  onSessionCompleted,
+  onError,
+  disconnectSocket,
+  SocketQuestion,
+} from "@/lib/websocket";
+import { Socket } from "socket.io-client";
+import { GradingSession } from "@/types";
 
 interface Question {
-  id: number;
+  id: string;
   question: string;
   placeholder: string;
   tips: string;
 }
 
-const questions: Question[] = [
-  {
-    id: 1,
-    question: "Mengapa Anda ingin mengambil jurusan ini?",
-    placeholder:
-      "Jelaskan motivasi dan alasan mendalam Anda memilih jurusan ini. Ceritakan bagaimana Anda tertarik dengan bidang ini...",
-    tips: "Berikan jawaban yang spesifik dan personal. Hindari jawaban umum seperti 'karena prospek kerja bagus'.",
-  },
-  {
-    id: 2,
-    question:
-      "Apa kekuatan dan kelemahan yang menurut Anda relevan dengan jurusan ini?",
-    placeholder:
-      "Deskripsikan kekuatan yang akan membantu kesuksesan Anda, serta kelemahan yang perlu dibenahi...",
-    tips: "Berikan contoh konkret dari pengalaman atau prestasi Anda. Jangan hanya menyebutkan, tetapi jelaskan relevansinya.",
-  },
-  {
-    id: 3,
-    question: "Bagaimana Anda mempersiapkan diri untuk sukses di jurusan ini?",
-    placeholder:
-      "Jelaskan langkah-langkah konkret yang telah atau akan Anda lakukan untuk mempersiapkan diri...",
-    tips: "Tunjukkan inisiatif dan komitmen. Sebutkan aktivitas, kursus, atau pengalaman yang relevan.",
-  },
-  {
-    id: 4,
-    question:
-      "Apa ekspektasi Anda terhadap kehidupan sebagai mahasiswa jurusan ini?",
-    placeholder:
-      "Deskripsikan visi Anda tentang bagaimana hidup sebagai mahasiswa dan apa yang ingin Anda raih...",
-    tips: "Tunjukkan pemahaman yang realistis tentang tantangan dan peluang di jurusan tersebut.",
-  },
-  {
-    id: 5,
-    question: "Rencana karir Anda setelah lulus dari jurusan ini?",
-    placeholder:
-      "Jelaskan arah karir yang Anda impikan dan bagaimana jurusan ini akan membantu mencapainya...",
-    tips: "Berikan gambaran jangka panjang yang terukur. Tunjukkan pemikiran matang tentang masa depan Anda.",
-  },
-];
-
 export default function EssayGraderPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, token } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resumeSessionId = searchParams.get("session");
+
   const [currentStep, setCurrentStep] = useState<"intro" | "test" | "loading">(
     "intro"
   );
-  const [currentQuestion, setCurrentQuestion] = useState(1);
-  const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<{ [key: string]: string }>({});
   const [timeLeft, setTimeLeft] = useState(900); // 15 minutes in seconds
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReview, setShowReview] = useState(false);
+  const [currentScore, setCurrentScore] = useState(0);
+  const [isWaitingForQuestion, setIsWaitingForQuestion] = useState(false);
+  const [activeSession, setActiveSession] = useState<GradingSession | null>(
+    null
+  );
+  const [showActiveSessionPopup, setShowActiveSessionPopup] = useState(false);
 
   const createSessionMutation = useCreateSession();
-  const sendMessageMutation = useSendMessage();
   const completeSessionMutation = useCompleteSession();
+  const sendMessageMutation = useSendMessage();
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const questionsRef = useRef<Question[]>([]);
+  const isCreatingSession = useRef(false); // Guard against double creation
+
+  // Fetch user's sessions to check for active sessions
+  const { data: sessionsData } = useGradingSessions({
+    status: "active",
+    limit: 10,
+  });
+
+  // Check for active session on mount
+  useEffect(() => {
+    if (sessionsData?.sessions && sessionsData.sessions.length > 0) {
+      // Find first active session that hasn't expired
+      const activeSessionFound = sessionsData.sessions.find((session) => {
+        const isExpired = new Date(session.expires_at) < new Date();
+        return session.status === "active" && !isExpired;
+      });
+
+      if (activeSessionFound) {
+        setActiveSession(activeSessionFound);
+      }
+    }
+  }, [sessionsData]);
+
+  // Handle resume session from URL parameter
+  useEffect(() => {
+    if (resumeSessionId && token && !sessionId) {
+      console.log("📥 Resuming session from URL:", resumeSessionId);
+      handleResumeSession(resumeSessionId);
+    }
+  }, [resumeSessionId, token]);
+
+  // Keep questionsRef in sync with questions state
+  useEffect(() => {
+    questionsRef.current = questions;
+  }, [questions]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -113,76 +136,531 @@ export default function EssayGraderPage() {
       .padStart(2, "0")}`;
   };
 
+  // WebSocket setup
+  useEffect(() => {
+    if (sessionId && token && !socketRef.current) {
+      console.log("🔌 Initializing WebSocket connection...");
+      const socket = createSocketConnection(token);
+      socketRef.current = socket;
+
+      socket.on("connect", () => {
+        console.log("✅ WebSocket connected");
+        setSocketConnected(true);
+        console.log("📤 Emitting join_session for sessionId:", sessionId);
+        joinSession(socket, sessionId);
+      });
+
+      socket.on("disconnect", () => {
+        console.log("❌ WebSocket disconnected");
+        setSocketConnected(false);
+      });
+
+      // Debug: Listen to all events
+      socket.onAny((eventName, ...args) => {
+        console.log(`📡 WebSocket event received: "${eventName}"`, args);
+      });
+
+      // Handle session joined confirmation
+      socket.on("session_joined", async (data) => {
+        console.log("✅ Session joined successfully:", data);
+
+        // If no question loaded yet, try to fetch from API as fallback
+        if (questionsRef.current.length === 0 && token) {
+          console.log("⏳ No questions loaded yet, fetching from API...");
+          try {
+            const result = await gradingService.getMessages(
+              sessionId,
+              { limit: 50 },
+              token
+            );
+
+            console.log("📥 Fetched messages from API:", result);
+
+            // Find questions from the messages
+            const questionMessages =
+              result.data?.messages?.filter(
+                (m) => m.message_type === "question"
+              ) || [];
+
+            if (questionMessages.length > 0) {
+              console.log("📝 Found questions in messages:", questionMessages);
+              const mappedQuestions = questionMessages.map((q) => ({
+                id: q.id,
+                question: q.content,
+                placeholder: "Tuliskan jawaban Anda dengan detail...",
+                tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+              }));
+              setQuestions(mappedQuestions);
+              setCurrentQuestionIndex(0);
+              setIsWaitingForQuestion(false);
+            } else {
+              console.log(
+                "⚠️ No questions found in messages, waiting for WebSocket..."
+              );
+            }
+          } catch (error) {
+            console.error("❌ Failed to fetch messages:", error);
+          }
+        }
+      });
+
+      // Listen for questions from backend
+      onQuestion(socket, (data: SocketQuestion) => {
+        console.log("📝 Received question from backend:", data);
+        setIsWaitingForQuestion(false);
+        setQuestions((prev) => [
+          ...prev,
+          {
+            id: data.id,
+            question: data.content,
+            placeholder: "Tuliskan jawaban Anda dengan detail...",
+            tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+          },
+        ]);
+      });
+
+      // Listen for score updates
+      onScoreUpdate(socket, (data) => {
+        console.log("📊 Score update received:", data);
+        setCurrentScore(data.current_score);
+      });
+
+      // Listen for session completion
+      onSessionCompleted(socket, (data) => {
+        console.log("🎉 Session completed:", data);
+        router.push(`/profile/result/${data.session_id}`);
+      });
+
+      // Listen for errors
+      onError(socket, (data) => {
+        console.error("❌ WebSocket error:", data);
+        alert(`Error: ${data.message}`);
+      });
+
+      return () => {
+        if (socketRef.current) {
+          disconnectSocket(socketRef.current);
+          socketRef.current = null;
+        }
+      };
+    }
+  }, [sessionId, token, router]);
+
+  // Polling fallback: if no questions after 5 seconds, try to fetch again
+  useEffect(() => {
+    if (
+      currentStep !== "test" ||
+      questions.length > 0 ||
+      !sessionId ||
+      !token
+    ) {
+      return;
+    }
+
+    const pollForQuestions = async () => {
+      console.log("🔄 Polling for questions...");
+      try {
+        const result = await gradingService.getMessages(
+          sessionId,
+          { limit: 50 },
+          token
+        );
+
+        const questionMessages =
+          result.data?.messages?.filter((m) => m.message_type === "question") ||
+          [];
+
+        if (questionMessages.length > 0) {
+          console.log("📝 Found questions via polling:", questionMessages);
+          const mappedQuestions = questionMessages.map((q) => ({
+            id: q.id,
+            question: q.content,
+            placeholder: "Tuliskan jawaban Anda dengan detail...",
+            tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+          }));
+          setQuestions(mappedQuestions);
+          setCurrentQuestionIndex(0);
+          setIsWaitingForQuestion(false);
+        }
+      } catch (error) {
+        console.error("❌ Polling failed:", error);
+      }
+    };
+
+    // Start polling after 3 seconds, then every 5 seconds
+    const initialTimeout = setTimeout(pollForQuestions, 3000);
+    const interval = setInterval(pollForQuestions, 5000);
+
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
+  }, [currentStep, questions.length, sessionId, token]);
+
   const handleAnswer = (value: string) => {
-    setAnswers({
-      ...answers,
-      [currentQuestion]: value,
-    });
+    const currentQuestion = questions[currentQuestionIndex];
+    if (currentQuestion && currentQuestion.id) {
+      setAnswers((prev) => ({
+        ...prev,
+        [currentQuestion.id]: value,
+      }));
+    }
   };
 
-  const handleNext = () => {
-    if (currentQuestion < questions.length) {
-      setCurrentQuestion(currentQuestion + 1);
+  const handleNext = async () => {
+    const currentQuestion = questions[currentQuestionIndex];
+    const answer = answers[currentQuestion?.id] || "";
+
+    if (!currentQuestion || !answer.trim()) {
+      alert("Silakan isi jawaban terlebih dahulu");
+      return;
+    }
+
+    if (!sessionId || !token) {
+      alert("Sesi tidak valid. Silakan mulai ulang.");
+      return;
+    }
+
+    // Send answer via HTTP API using gradingService
+    // Response will contain: message, score, next_question, session_completed
+    try {
+      setIsWaitingForQuestion(true);
+
+      const response = await sendMessageMutation.mutateAsync({
+        sessionId,
+        data: {
+          message_type: "answer",
+          content: answer,
+        },
+      });
+
+      console.log("✅ Answer sent successfully:", response);
+
+      // Update score if provided
+      if (response.data.score !== undefined) {
+        setCurrentScore((prev) => prev + response.data.score!);
+      }
+
+      // Check if session is completed (max_questions reached or threshold reached)
+      if (response.data.session_completed) {
+        console.log("🎉 Session completed automatically!");
+        setCurrentStep("loading");
+        // Wait a bit for backend processing
+        await new Promise((resolve) => setTimeout(resolve, 1500));
+        router.push(`/profile/result/${sessionId}`);
+        return;
+      }
+
+      // Check if next_question is provided in response
+      if (response.data.next_question) {
+        console.log(
+          "📝 Next question received in response:",
+          response.data.next_question
+        );
+        // Add new question to the list
+        setQuestions((prev) => [
+          ...prev,
+          {
+            id: response.data.next_question!.id,
+            question: response.data.next_question!.content,
+            placeholder: "Tuliskan jawaban Anda dengan detail...",
+            tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+          },
+        ]);
+        // Move to the new question
+        setCurrentQuestionIndex(questions.length); // questions.length is the index of new question
+        setIsWaitingForQuestion(false);
+      } else {
+        // No next_question in response, wait for WebSocket or poll
+        console.log(
+          "⏳ No next_question in response, waiting for WebSocket..."
+        );
+        // Move to next question if available locally
+        if (currentQuestionIndex < questions.length - 1) {
+          setCurrentQuestionIndex(currentQuestionIndex + 1);
+          setIsWaitingForQuestion(false);
+        }
+        // Otherwise keep waiting
+      }
+    } catch (error) {
+      console.error("❌ Error sending answer:", error);
+      alert(
+        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+      setIsWaitingForQuestion(false);
     }
   };
 
   const handlePrevious = () => {
-    if (currentQuestion > 1) {
-      setCurrentQuestion(currentQuestion - 1);
+    if (currentQuestionIndex > 0) {
+      setCurrentQuestionIndex(currentQuestionIndex - 1);
+    }
+  };
+
+  // Resume an existing active session
+  const handleResumeSession = async (existingSessionId: string) => {
+    if (!token) {
+      alert("Anda harus login terlebih dahulu");
+      router.push("/auth");
+      return;
+    }
+
+    try {
+      console.log("🔄 Resuming session:", existingSessionId);
+
+      // Get session details
+      const sessionResponse = await gradingService.getSession(
+        existingSessionId,
+        token
+      );
+      const session = sessionResponse.data;
+
+      // Check if session is still active and not expired
+      const isExpired = new Date(session.expires_at) < new Date();
+      if (session.status !== "active" || isExpired) {
+        alert("Sesi ini sudah berakhir atau tidak aktif lagi.");
+        router.push("/essay-grader");
+        return;
+      }
+
+      // Calculate remaining time
+      const expiresAt = new Date(session.expires_at).getTime();
+      const now = new Date().getTime();
+      const remainingSeconds = Math.max(
+        0,
+        Math.floor((expiresAt - now) / 1000)
+      );
+
+      setSessionId(existingSessionId);
+      setCurrentStep("test");
+      setTimeLeft(remainingSeconds);
+      setCurrentScore(session.current_score || 0);
+      setIsWaitingForQuestion(true);
+
+      // Fetch existing messages to restore state
+      const messagesResponse = await gradingService.getMessages(
+        existingSessionId,
+        { limit: 100 },
+        token
+      );
+
+      const messages = messagesResponse.data?.messages || [];
+      console.log("📥 Fetched messages for resume:", messages);
+
+      // Separate questions and answers
+      const questionMessages = messages.filter(
+        (m) => m.message_type === "question"
+      );
+      const answerMessages = messages.filter(
+        (m) => m.message_type === "answer"
+      );
+
+      // Map questions
+      const mappedQuestions = questionMessages.map((q) => ({
+        id: q.id,
+        question: q.content,
+        placeholder: "Tuliskan jawaban Anda dengan detail...",
+        tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+      }));
+
+      // Build answers map (match answers to questions by order)
+      const answersMap: { [key: string]: string } = {};
+      answerMessages.forEach((answer, index) => {
+        if (questionMessages[index]) {
+          answersMap[questionMessages[index].id] = answer.content;
+        }
+      });
+
+      if (mappedQuestions.length > 0) {
+        setQuestions(mappedQuestions);
+        setAnswers(answersMap);
+        // Set to the last unanswered question or the latest question
+        const lastAnsweredIndex = Math.min(
+          answerMessages.length,
+          mappedQuestions.length - 1
+        );
+        setCurrentQuestionIndex(lastAnsweredIndex);
+        setIsWaitingForQuestion(false);
+        console.log("✅ Session resumed successfully!");
+      } else {
+        console.log("⚠️ No questions found, waiting for first question...");
+      }
+    } catch (error) {
+      console.error("❌ Error resuming session:", error);
+      alert("Gagal melanjutkan sesi. Silakan coba lagi.");
+      router.push("/essay-grader");
     }
   };
 
   const handleStart = async () => {
+    if (!token) {
+      alert("Anda harus login terlebih dahulu");
+      router.push("/auth");
+      return;
+    }
+
+    // Prevent double session creation
+    if (isCreatingSession.current || createSessionMutation.isPending) {
+      console.log("⚠️ Session creation already in progress, ignoring...");
+      return;
+    }
+
+    // Block new session if there's an active session - show popup
+    if (activeSession) {
+      setShowActiveSessionPopup(true);
+      return;
+    }
+
     try {
-      const session = await createSessionMutation.mutateAsync({
+      isCreatingSession.current = true;
+
+      const response = await createSessionMutation.mutateAsync({
         target_major: user?.dream_major || "General",
-        max_questions: questions.length,
+        max_questions: 5,
         session_duration_minutes: 15,
       });
-      setSessionId(session.id);
+      console.log("✅ Session created:", response.data);
+      setSessionId(response.data.id);
       setCurrentStep("test");
+      setIsWaitingForQuestion(true);
+
+      // Check if first question is provided in the response (matches API spec)
+      if (response.data.first_question) {
+        console.log(
+          "📝 First question received in session creation response:",
+          response.data.first_question
+        );
+        setQuestions([
+          {
+            id: response.data.first_question.id,
+            question: response.data.first_question.content,
+            placeholder: "Tuliskan jawaban Anda dengan detail...",
+            tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+          },
+        ]);
+        setCurrentQuestionIndex(0);
+        setIsWaitingForQuestion(false);
+        console.log("✅ First question loaded successfully!");
+        return;
+      }
+
+      console.warn(
+        "⚠️ first_question not in response. Available keys:",
+        Object.keys(response.data)
+      );
+      console.log("⏳ Waiting for first question via WebSocket or polling...");
+
+      // Try to fetch first question via API (WebSocket might deliver it too)
+      await fetchFirstQuestion(response.data.id, token, 3);
     } catch (error) {
       console.error("Failed to create session:", error);
-      // Ideally show a toast or error message here
+      alert("Gagal membuat sesi. Silakan coba lagi.");
+    } finally {
+      isCreatingSession.current = false;
     }
   };
 
+  // Helper function to fetch first question with retries
+  const fetchFirstQuestion = async (
+    sessionId: string,
+    authToken: string,
+    retries: number
+  ) => {
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      console.log(
+        `🔄 Attempting to fetch first question (attempt ${attempt}/${retries})...`
+      );
+
+      // Wait a bit before trying (backend might need time to generate question)
+      await new Promise((resolve) =>
+        setTimeout(resolve, attempt === 1 ? 1000 : 2000)
+      );
+
+      try {
+        const messagesResponse = await gradingService.getMessages(
+          sessionId,
+          { limit: 50 },
+          authToken
+        );
+
+        console.log("📥 Fetched messages:", messagesResponse);
+
+        const questionMessages =
+          messagesResponse.data?.messages?.filter(
+            (m) => m.message_type === "question"
+          ) || [];
+
+        if (questionMessages.length > 0) {
+          console.log("📝 Found questions:", questionMessages);
+          const mappedQuestions = questionMessages.map((q) => ({
+            id: q.id,
+            question: q.content,
+            placeholder: "Tuliskan jawaban Anda dengan detail...",
+            tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+          }));
+          setQuestions(mappedQuestions);
+          setCurrentQuestionIndex(0);
+          setIsWaitingForQuestion(false);
+          return true;
+        }
+      } catch (error) {
+        console.error(`❌ Fetch attempt ${attempt} failed:`, error);
+      }
+    }
+
+    console.log("⏳ Will continue waiting for question via WebSocket...");
+    return false;
+  };
+
   const handleSubmitTest = async () => {
-    if (!sessionId) {
-      console.error("No session ID found");
+    if (!sessionId || !token) {
+      console.error("No session ID or token found");
       return;
     }
+
+    const currentQuestion = questions[currentQuestionIndex];
+    const answer = answers[currentQuestion?.id] || "";
+
     setIsSubmitting(true);
     setCurrentStep("loading");
 
     try {
-      // Send all answers sequentially
-      for (const q of questions) {
-        const answer = answers[q.id] || "";
-
-        // Send question context
-        await sendMessageMutation.mutateAsync({
+      // Send last answer if exists and not already sent
+      if (currentQuestion && answer.trim()) {
+        const messageResponse = await sendMessageMutation.mutateAsync({
           sessionId,
-          data: { message_type: "question", content: q.question },
+          data: {
+            message_type: "answer",
+            content: answer,
+          },
         });
+        console.log("✅ Last answer sent:", messageResponse);
 
-        // Send answer
-        await sendMessageMutation.mutateAsync({
-          sessionId,
-          data: { message_type: "answer", content: answer || "Tidak dijawab" },
-        });
+        // Check if session was auto-completed after last answer
+        if (messageResponse.data.session_completed) {
+          console.log("🎉 Session auto-completed after last answer");
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          router.push(`/profile/result/${sessionId}`);
+          return;
+        }
       }
 
-      // Complete session
-      await completeSessionMutation.mutateAsync({
+      // Manually complete session - backend will generate final analysis
+      const completeResponse = await completeSessionMutation.mutateAsync({
         sessionId,
-        data: { final_score: 0, readiness_level: "analyzing" },
       });
+      console.log("✅ Session completed manually:", completeResponse);
+
+      // Wait a bit for backend to finish processing final analysis
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Navigate to result page
       router.push(`/profile/result/${sessionId}`);
     } catch (error) {
-      console.error("Error submitting test:", error);
+      console.error("❌ Error submitting test:", error);
+      alert(
+        `Error: ${error instanceof Error ? error.message : "Gagal mengirim tes"}`
+      );
       setCurrentStep("test");
       setIsSubmitting(false);
     }
@@ -212,15 +690,20 @@ export default function EssayGraderPage() {
           user={user}
           onStart={handleStart}
           onBack={() => router.push("/dashboard")}
+          activeSession={activeSession}
+          onResumeSession={handleResumeSession}
+          isStarting={createSessionMutation.isPending}
+          showActiveSessionPopup={showActiveSessionPopup}
+          onClosePopup={() => setShowActiveSessionPopup(false)}
         />
       )}
 
       {currentStep === "test" && (
         <TestScreen
-          question={questions[currentQuestion - 1]}
-          currentQuestion={currentQuestion}
+          question={questions[currentQuestionIndex]}
+          currentQuestionIndex={currentQuestionIndex}
           totalQuestions={questions.length}
-          answer={answers[currentQuestion] || ""}
+          answer={answers[questions[currentQuestionIndex]?.id] || ""}
           onAnswer={handleAnswer}
           onNext={handleNext}
           onPrevious={handlePrevious}
@@ -230,9 +713,15 @@ export default function EssayGraderPage() {
           isSubmitting={isSubmitting}
           answers={answers}
           questions={questions}
-          onQuestionSelect={(qNum) => setCurrentQuestion(qNum)}
+          onQuestionSelect={(questionId) => {
+            const index = questions.findIndex((q) => q.id === questionId);
+            if (index !== -1) setCurrentQuestionIndex(index);
+          }}
           showReview={showReview}
           onShowReview={setShowReview}
+          currentScore={currentScore}
+          isWaitingForQuestion={isWaitingForQuestion}
+          socketConnected={socketConnected}
         />
       )}
 
@@ -245,10 +734,20 @@ function IntroScreen({
   user,
   onStart,
   onBack,
+  activeSession,
+  onResumeSession,
+  isStarting,
+  showActiveSessionPopup,
+  onClosePopup,
 }: {
   user: any;
   onStart: () => void;
   onBack: () => void;
+  activeSession: GradingSession | null;
+  onResumeSession: (sessionId: string) => void;
+  isStarting: boolean;
+  showActiveSessionPopup: boolean;
+  onClosePopup: () => void;
 }) {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -437,6 +936,42 @@ function IntroScreen({
                 </p>
               </motion.div>
 
+              {/* Active Session Alert */}
+              {activeSession && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.6, delay: 0.65 }}
+                  className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-4"
+                >
+                  <div className="flex items-start space-x-3">
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="w-3 h-3 bg-orange-500 rounded-full mt-1 flex-shrink-0"
+                    />
+                    <div className="flex-1">
+                      <h3 className="font-semibold text-orange-800 text-sm mb-1">
+                        Assessment Belum Selesai
+                      </h3>
+                      <p className="text-xs text-orange-700 mb-2">
+                        Anda memiliki assessment untuk jurusan{" "}
+                        <strong>{activeSession.target_major}</strong> yang belum
+                        diselesaikan.
+                      </p>
+                      <motion.button
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => onResumeSession(activeSession.id)}
+                        className="btn btn-sm bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 text-xs"
+                      >
+                        Lanjutkan Assessment →
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Action Buttons */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -445,19 +980,40 @@ function IntroScreen({
                 className="flex items-center gap-2"
               >
                 <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: isStarting ? 1 : 1.05 }}
+                  whileTap={{ scale: isStarting ? 1 : 0.95 }}
                   onClick={onStart}
-                  className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 sm:px-6 py-2 flex items-center justify-center space-x-2 text-xs sm:text-sm"
+                  disabled={isStarting}
+                  className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 sm:px-6 py-2 flex items-center justify-center space-x-2 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span>Mulai Test Sekarang</span>
-                  <SparklesIcon className="w-4 h-4" />
+                  <span>
+                    {isStarting
+                      ? "Memulai..."
+                      : activeSession
+                        ? "Mulai Assessment Baru"
+                        : "Mulai Test Sekarang"}
+                  </span>
+                  {isStarting ? (
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      <SparklesIcon className="w-4 h-4" />
+                    </motion.div>
+                  ) : (
+                    <SparklesIcon className="w-4 h-4" />
+                  )}
                 </motion.button>
                 <motion.button
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onBack}
-                  className="btn btn-secondary btn-sm sm:btn-md px-4 sm:px-6 py-2 text-xs sm:text-sm"
+                  disabled={isStarting}
+                  className="btn btn-secondary btn-sm sm:btn-md px-4 sm:px-6 py-2 text-xs sm:text-sm disabled:opacity-50"
                 >
                   Kembali
                 </motion.button>
@@ -466,13 +1022,107 @@ function IntroScreen({
           </div>
         </motion.div>
       </div>
+
+      {/* Active Session Blocking Popup */}
+      <AnimatePresence>
+        {showActiveSessionPopup && activeSession && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
+            onClick={onClosePopup}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Warning Icon */}
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center">
+                  <ExclamationTriangleIcon className="w-8 h-8 text-orange-600" />
+                </div>
+              </div>
+
+              {/* Title */}
+              <h3 className="text-xl font-bold text-neutral-900 text-center mb-2">
+                Assessment Belum Selesai
+              </h3>
+
+              {/* Description */}
+              <p className="text-neutral-600 text-center mb-4 text-sm">
+                Anda tidak dapat memulai assessment baru karena masih memiliki
+                assessment yang belum diselesaikan.
+              </p>
+
+              {/* Session Info */}
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-2 mb-2">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className="w-2 h-2 bg-orange-500 rounded-full"
+                  />
+                  <span className="text-sm font-semibold text-orange-800">
+                    Assessment Aktif
+                  </span>
+                </div>
+                <p className="text-sm text-orange-700">
+                  <strong>Jurusan:</strong> {activeSession.target_major}
+                </p>
+                <p className="text-xs text-orange-600 mt-1">
+                  Dimulai pada{" "}
+                  {new Date(activeSession.created_at).toLocaleDateString(
+                    "id-ID",
+                    {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    }
+                  )}
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    onClosePopup();
+                    onResumeSession(activeSession.id);
+                  }}
+                  className="w-full btn btn-primary py-3 flex items-center justify-center space-x-2"
+                >
+                  <span>Lanjutkan Assessment</span>
+                  <SparklesIcon className="w-4 h-4" />
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={onClosePopup}
+                  className="w-full btn btn-secondary py-2.5"
+                >
+                  Tutup
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
 
 function TestScreen({
   question,
-  currentQuestion,
+  currentQuestionIndex,
   totalQuestions,
   answer,
   onAnswer,
@@ -487,27 +1137,81 @@ function TestScreen({
   onQuestionSelect,
   showReview,
   onShowReview,
+  currentScore,
+  isWaitingForQuestion,
+  socketConnected,
 }: {
-  question: Question;
-  currentQuestion: number;
+  question: Question | undefined;
+  currentQuestionIndex: number;
   totalQuestions: number;
   answer: string;
   onAnswer: (value: string) => void;
-  onNext: () => void;
+  onNext: () => Promise<void>;
   onPrevious: () => void;
   onSubmit: () => void;
   timeLeft: number;
   formatTime: (seconds: number) => string;
   isSubmitting: boolean;
-  answers: { [key: number]: string };
+  answers: { [key: string]: string };
   questions: Question[];
-  onQuestionSelect: (qNum: number) => void;
+  onQuestionSelect: (questionId: string) => void;
   showReview: boolean;
   onShowReview: (show: boolean) => void;
+  currentScore: number;
+  isWaitingForQuestion: boolean;
+  socketConnected: boolean;
 }) {
-  const progress = (currentQuestion / totalQuestions) * 100;
-  const isLastQuestion = currentQuestion === totalQuestions;
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const progress =
+    totalQuestions > 0
+      ? ((currentQuestionIndex + 1) / totalQuestions) * 100
+      : 0;
+  const isLastQuestion =
+    totalQuestions > 0 && currentQuestionIndex === totalQuestions - 1;
   const isTimeRunningOut = timeLeft < 300; // Less than 5 minutes
+
+  // Focus textarea when question changes
+  useEffect(() => {
+    if (question && textareaRef.current && !showReview) {
+      // Small delay to ensure DOM is ready after animation
+      const timer = setTimeout(() => {
+        textareaRef.current?.focus();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [currentQuestionIndex, question, showReview]);
+
+  if (!question && questions.length === 0) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="inline-flex items-center justify-center w-12 h-12 bg-primary-600 rounded-full mb-4"
+          >
+            <SparklesIcon className="w-6 h-6 text-white" />
+          </motion.div>
+          <h2 className="text-lg font-bold text-neutral-900 mb-2">
+            Menunggu pertanyaan pertama...
+          </h2>
+          <p className="text-neutral-600 text-sm">
+            {socketConnected
+              ? "AI sedang menyiapkan pertanyaan untuk Anda"
+              : "Menghubungkan ke server..."}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!question) {
+    return (
+      <div className="h-screen flex items-center justify-center">
+        <p>Pertanyaan tidak tersedia</p>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -523,7 +1227,7 @@ function TestScreen({
                 <p className="text-xs text-neutral-600">
                   {showReview
                     ? "Review Jawaban"
-                    : `Pertanyaan ${currentQuestion} dari ${totalQuestions}`}
+                    : `Pertanyaan ${currentQuestionIndex + 1} dari ${totalQuestions}`}
                 </p>
                 <p className="font-semibold text-neutral-900 text-xs sm:text-sm">
                   Essay Preparedness Grader
@@ -531,8 +1235,25 @@ function TestScreen({
               </div>
             </div>
 
-            {/* Review Button and Timer */}
+            {/* Review Button, Score, and Timer */}
             <div className="flex items-center gap-2">
+              {/* Connection Status */}
+              <div
+                className={`w-2 h-2 rounded-full ${
+                  socketConnected ? "bg-green-500" : "bg-red-500"
+                } animate-pulse`}
+                title={socketConnected ? "Connected" : "Disconnected"}
+              />
+
+              {/* Score Display */}
+              {currentScore > 0 && (
+                <div className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-lg">
+                  <span className="text-xs font-semibold text-green-700">
+                    Score: {currentScore}
+                  </span>
+                </div>
+              )}
+
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -585,7 +1306,7 @@ function TestScreen({
               {/* Left Column - Question Content */}
               <div className="lg:col-span-3 flex flex-col min-h-0">
                 <motion.div
-                  key={currentQuestion}
+                  key={currentQuestionIndex}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
@@ -595,7 +1316,7 @@ function TestScreen({
                   <div className="bg-white rounded-lg shadow-md p-4 mb-3 flex flex-col min-h-0 flex-1 overflow-hidden">
                     <div className="mb-2 flex-shrink-0">
                       <div className="inline-flex items-center space-x-2 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs font-medium mb-2">
-                        <span>Pertanyaan {currentQuestion}</span>
+                        <span>Pertanyaan {currentQuestionIndex + 1}</span>
                       </div>
                       <h2 className="text-lg md:text-xl font-bold text-neutral-900">
                         {question.question}
@@ -618,11 +1339,13 @@ function TestScreen({
                         Jawaban Anda
                       </label>
                       <textarea
+                        ref={textareaRef}
                         value={answer}
                         onChange={(e) => onAnswer(e.target.value)}
                         placeholder={question.placeholder}
-                        className="w-full px-3 py-2 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-none font-regular text-xs text-neutral-900 placeholder-neutral-500 flex-1 min-h-0"
-                        rows={1}
+                        className="w-full px-3 py-2 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-y font-regular text-sm text-neutral-900 placeholder-neutral-500 flex-1"
+                        style={{ minHeight: "150px" }}
+                        rows={6}
                       />
                       <p className="text-xs text-neutral-500 mt-1 flex-shrink-0">
                         {answer.length} karakter
@@ -649,7 +1372,7 @@ function TestScreen({
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={onPrevious}
-                      disabled={currentQuestion === 1}
+                      disabled={currentQuestionIndex === 0}
                       className="btn btn-secondary px-3 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       ← Sebelumnya
@@ -662,9 +1385,11 @@ function TestScreen({
                           key={i}
                           animate={{
                             backgroundColor:
-                              i + 1 === currentQuestion
+                              i === currentQuestionIndex
                                 ? "#3b82f6"
-                                : answer.length > 0 && i + 1 < currentQuestion
+                                : i < currentQuestionIndex &&
+                                    questions[i] &&
+                                    answers[questions[i]?.id]
                                   ? "#10b981"
                                   : "#e5e7eb",
                           }}
@@ -691,9 +1416,27 @@ function TestScreen({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={onNext}
-                        className="btn btn-primary px-3 py-2 text-xs"
+                        disabled={isWaitingForQuestion}
+                        className="btn btn-primary px-3 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                       >
-                        Selanjutnya →
+                        <span>
+                          {isWaitingForQuestion
+                            ? "Menunggu..."
+                            : "Kirim & Lanjut"}
+                        </span>
+                        {isWaitingForQuestion && (
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                              ease: "linear",
+                            }}
+                            className="w-3.5 h-3.5"
+                          >
+                            <SparklesIcon className="w-3.5 h-3.5" />
+                          </motion.div>
+                        )}
                       </motion.button>
                     )}
                   </div>
@@ -711,21 +1454,21 @@ function TestScreen({
                   Navigasi Soal
                 </h3>
                 <div className="grid grid-cols-5 gap-1.5">
-                  {questions.map((q) => (
+                  {questions.map((q, idx) => (
                     <motion.button
                       key={q.id}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => onQuestionSelect(q.id)}
                       className={`w-full py-1.5 rounded-lg font-medium text-xs transition-colors ${
-                        q.id === currentQuestion
+                        idx === currentQuestionIndex
                           ? "bg-primary-600 text-white"
                           : answers[q.id] && answers[q.id].trim().length > 0
                             ? "bg-green-100 text-green-800"
                             : "bg-neutral-200 text-neutral-600 hover:bg-neutral-300"
                       }`}
                     >
-                      {q.id}
+                      {idx + 1}
                     </motion.button>
                   ))}
                 </div>
@@ -741,15 +1484,32 @@ function TestScreen({
                     </span>{" "}
                     terjawab
                   </p>
-                  <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden">
+                  <div className="w-full bg-neutral-200 rounded-full h-1.5 overflow-hidden mb-2">
                     <motion.div
                       animate={{
-                        width: `${(Object.entries(answers).filter(([, value]) => value && value.trim().length > 0).length / questions.length) * 100}%`,
+                        width: `${questions.length > 0 ? (Object.entries(answers).filter(([, value]) => value && value.trim().length > 0).length / questions.length) * 100 : 0}%`,
                       }}
                       transition={{ duration: 0.3 }}
                       className="h-full bg-green-500"
                     />
                   </div>
+                  {currentScore > 0 && (
+                    <p className="text-xs text-neutral-600">
+                      <span className="font-medium text-green-700">
+                        Score saat ini: {currentScore}
+                      </span>
+                    </p>
+                  )}
+                  {isWaitingForQuestion && (
+                    <p className="text-xs text-blue-600 mt-1 flex items-center gap-1">
+                      <motion.span
+                        animate={{ opacity: [1, 0.5, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        ⏳ Menunggu pertanyaan berikutnya...
+                      </motion.span>
+                    </p>
+                  )}
                 </div>
               </motion.div>
             </div>
@@ -758,7 +1518,7 @@ function TestScreen({
           {showReview && (
             <div className="overflow-y-auto max-w-4xl mx-auto">
               <div className="space-y-3">
-                {questions.map((q) => (
+                {questions.map((q, idx) => (
                   <motion.div
                     key={q.id}
                     initial={{ opacity: 0, y: 10 }}
@@ -769,7 +1529,7 @@ function TestScreen({
                     <div className="flex items-start justify-between mb-2">
                       <div className="flex-1 min-w-0">
                         <div className="inline-flex items-center space-x-1 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs font-medium mb-2">
-                          <span>Q{q.id}</span>
+                          <span>Q{idx + 1}</span>
                         </div>
                         <h3 className="text-sm font-bold text-neutral-900">
                           {q.question}

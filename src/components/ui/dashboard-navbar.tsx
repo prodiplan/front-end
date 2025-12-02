@@ -292,12 +292,9 @@ export function DashboardNavBar({
           <div className="flex items-center space-x-1 sm:space-x-4">
             {user ? (
               <>
-                <button
-                  onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-                  className="text-gray-900 text-xs sm:text-sm font-medium hidden sm:block max-w-[100px] truncate hover:text-primary-600 transition-colors focus:outline-none"
-                >
+                <span className="text-gray-900 text-xs sm:text-sm font-medium hidden sm:block max-w-[100px] truncate hover:text-primary-600 transition-colors">
                   {user.full_name}
-                </button>
+                </span>
 
                 {/* Desktop Profile Dropdown */}
                 <div className="relative hidden sm:block">

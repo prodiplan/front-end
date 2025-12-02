@@ -26,6 +26,12 @@ export interface GradingSession {
   expires_at: string;
   last_activity_at?: string;
   created_at: string;
+  first_question?: {
+    id: string;
+    session_id: string;
+    content: string;
+    created_at: string;
+  };
 }
 
 export interface SessionMessage {
@@ -38,29 +44,43 @@ export interface SessionMessage {
   created_at: string;
 }
 
+// Response from sending a message (answer) - includes next question and session status
+export interface SendMessageResponse {
+  message: SessionMessage;
+  score?: number;
+  next_question?: {
+    id: string;
+    content: string;
+    message_type: "question";
+  };
+  session_completed: boolean;
+}
+
 export interface GradingResult {
   id: string;
   session_id: string;
   final_score: number;
-  readiness_level: "ready" | "not_ready" | "needs_improvement"; // Adjust based on actual values
-  analysis_report: {
-    summary: string;
-    recommendations: string;
-    strengths: string;
-    weaknesses: string;
-    key_insights: {
-      motivation_score: number;
-      technical_understanding: number;
-      career_alignment: number;
-    };
-    personality_traits: {
-      analytical_thinking: string;
-      problem_solving: string;
-      creativity: string;
-    };
-    career_suggestions: string[];
-  };
+  readiness_level: "ready" | "not_ready" | "needs_improvement";
+  analysis_report: AnalysisReport;
   created_at: string;
+}
+
+export interface AnalysisReport {
+  summary: string;
+  recommendations: string;
+  strengths: string;
+  weaknesses: string;
+  key_insights: {
+    motivation_score: number;
+    technical_understanding: number;
+    career_alignment: number;
+  };
+  personality_traits: {
+    analytical_thinking: string;
+    problem_solving: string;
+    creativity: string;
+  };
+  career_suggestions: string[];
 }
 
 export interface Pagination {

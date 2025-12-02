@@ -20,17 +20,22 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import Link from "next/link";
-import { useGradingSessions } from "@/hooks/useGradingSession";
+import {
+  useGradingSessions,
+  useGradingResults,
+} from "@/hooks/useGradingSession";
 
 interface Assessment {
   id: string;
   session_id: string;
   target_major: string;
-  status: string;
+  status: "completed" | "not_completed";
   final_score?: number;
   readiness_level?: string;
   created_at: string;
   completed_at?: string;
+  question_count?: number;
+  max_questions?: number;
 }
 
 interface ProfileData {
@@ -54,18 +59,55 @@ export default function ProfilePage() {
   const { data: sessionsData, isLoading: isSessionsLoading } =
     useGradingSessions({ limit: 20 });
 
+  const { data: resultsData, isLoading: isResultsLoading } = useGradingResults({
+    limit: 100,
+  });
+
+  // Get set of session IDs that have results (completed/analyzed)
+  const completedSessionIds = new Set(
+    resultsData?.results?.map((r) => r.session_id) || []
+  );
+
   const assessments: Assessment[] =
-    sessionsData?.sessions.map((session) => ({
-      id: session.id,
-      session_id: session.id,
-      target_major: session.target_major,
-      status: session.status,
-      final_score: session.current_score,
-      readiness_level:
-        session.status === "completed" ? "Selesai" : "Dalam Proses", // Placeholder
-      created_at: session.created_at,
-      completed_at: session.expires_at,
-    })) || [];
+    sessionsData?.sessions
+      .map((session) => {
+        // Check if this session has a result (analyzed by AI)
+        const hasResult = completedSessionIds.has(session.id);
+        const result = resultsData?.results?.find(
+          (r) => r.session_id === session.id
+        );
+
+        if (hasResult && result) {
+          // Completed - has been analyzed by AI
+          return {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "completed" as const,
+            final_score: result.final_score,
+            readiness_level: result.readiness_level,
+            created_at: session.created_at,
+            completed_at: result.created_at,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          };
+        } else {
+          // Not completed - no result yet (can be continued)
+          return {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "not_completed" as const,
+            final_score: session.current_score,
+            readiness_level: "Belum Selesai",
+            created_at: session.created_at,
+            completed_at: undefined,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          };
+        }
+      })
+      .filter((a): a is Assessment => a !== null) || [];
 
   const [formData, setFormData] = useState<ProfileData>({
     id: "",
@@ -271,18 +313,21 @@ export default function ProfilePage() {
                   <p className="text-xs text-green-600 mt-1">Assessments</p>
                 </div>
 
-                {/* Pending/Analyzing */}
+                {/* Pending/Not Completed */}
                 <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-medium text-yellow-700 uppercase">
-                      Pending
+                      Not Completed
                     </span>
                     <ClockIcon className="w-5 h-5 text-yellow-600" />
                   </div>
                   <p className="text-2xl font-bold text-yellow-700">
-                    {assessments.filter((a) => a.status === "analyzing").length}
+                    {
+                      assessments.filter((a) => a.status === "not_completed")
+                        .length
+                    }
                   </p>
-                  <p className="text-xs text-yellow-600 mt-1">Analyzing</p>
+                  <p className="text-xs text-yellow-600 mt-1">Belum Selesai</p>
                 </div>
               </div>
             </motion.div>
@@ -336,7 +381,7 @@ export default function ProfilePage() {
                             <Link href={`/profile/result/${assessment.id}`}>
                               <motion.div
                                 whileHover={{ x: 4 }}
-                                className="p-4 bg-blue-50 border border-primary-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                                className="p-4 bg-green-50 border border-green-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
                               >
                                 <div className="flex items-start justify-between mb-3">
                                   <div className="flex-1">
@@ -350,7 +395,7 @@ export default function ProfilePage() {
                                     </p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-lg font-bold text-primary-600">
+                                    <p className="text-lg font-bold text-green-600">
                                       {assessment.final_score}
                                     </p>
                                     <p className="text-xs text-gray-500 mt-0.5">
@@ -358,48 +403,53 @@ export default function ProfilePage() {
                                     </p>
                                   </div>
                                 </div>
-                                <div className="flex items-center justify-between pt-3 border-t border-primary-100">
+                                <div className="flex items-center justify-between pt-3 border-t border-green-100">
                                   <div className="flex items-center space-x-2">
                                     <div className="w-2 h-2 bg-green-500 rounded-full" />
                                     <p className="text-xs font-medium text-green-700">
-                                      {assessment.readiness_level}
+                                      Completed
                                     </p>
                                   </div>
-                                  <p className="text-xs text-primary-600 font-medium">
+                                  <p className="text-xs text-green-600 font-medium">
                                     View Details →
                                   </p>
                                 </div>
                               </motion.div>
                             </Link>
                           ) : (
-                            <motion.div
-                              whileHover={{ x: 2 }}
-                              className="p-3 bg-blue-50 border border-primary-200 rounded-lg"
+                            <Link
+                              href={`/essay-grader?session=${assessment.session_id}`}
                             >
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-semibold text-gray-900">
-                                  {assessment.target_major}
-                                </p>
-                                <div className="flex items-center space-x-1">
-                                  <motion.div
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{
-                                      duration: 2,
-                                      repeat: Infinity,
-                                    }}
-                                    className="w-1.5 h-1.5 bg-primary-500 rounded-full"
-                                  />
-                                  <p className="text-xs text-primary-600">
-                                    Analyzing
-                                  </p>
+                              <motion.div
+                                whileHover={{ x: 4 }}
+                                className="p-3 bg-red-50 border border-red-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <p className="text-sm font-semibold text-gray-900">
+                                      {assessment.target_major}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">
+                                      {new Date(
+                                        assessment.created_at
+                                      ).toLocaleDateString("id-ID")}
+                                    </p>
+                                    <p className="text-xs text-red-500 mt-1">
+                                      {assessment.question_count || 0}{" "}
+                                      pertanyaan dijawab
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-red-500 text-xs">
+                                      ✗
+                                    </span>
+                                    <p className="text-xs text-red-600 font-medium">
+                                      Not Completed →
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {new Date(
-                                  assessment.created_at
-                                ).toLocaleDateString("id-ID")}
-                              </p>
-                            </motion.div>
+                              </motion.div>
+                            </Link>
                           )}
                         </div>
                       ))}

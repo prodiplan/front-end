@@ -9,7 +9,15 @@ import {
 } from "react";
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
-import { API_ENDPOINTS, apiCall } from "@/lib/api";
+import { authService } from "@/lib/services/auth";
+import type {
+  RegisterData,
+  LoginCredentials,
+  UpdateProfileRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  DeleteUserRequest,
+} from "@/lib/services/auth";
 
 interface User {
   id: string;
@@ -34,16 +42,9 @@ interface AuthContextType {
   logout: () => void;
   refreshToken: () => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
-}
-
-interface RegisterData {
-  email: string;
-  password: string;
-  full_name: string;
-  birth_date: string;
-  school_origin: string;
-  dream_major: string;
-  phone_number: string;
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (oobCode: string, newPassword: string) => Promise<void>;
+  deleteAccount: (password: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -128,7 +129,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (authToken: string) => {
     try {
-      const data = await apiCall(API_ENDPOINTS.auth.me, {}, authToken);
+      const data = await authService.getProfile(authToken);
       if (data.success) {
         setUser(data.data);
       } else {
@@ -144,10 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      const data = await apiCall(API_ENDPOINTS.auth.login, {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
+      const data = await authService.login({ email, password });
 
       if (!data.success) {
         throw new Error(data.error?.message || "Login failed");
@@ -174,10 +172,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (userData: RegisterData) => {
     setIsLoading(true);
     try {
-      const data = await apiCall(API_ENDPOINTS.auth.register, {
-        method: "POST",
-        body: JSON.stringify(userData),
-      });
+      const data = await authService.register(userData);
 
       if (!data.success) {
         throw new Error(data.error?.message || "Registration failed");
@@ -205,16 +200,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Call logout endpoint if token exists
     const token = Cookies.get("token");
     if (token) {
-      const refresh_token = Cookies.get("refresh_token");
       // Fire and forget - don't await logout endpoint
-      apiCall(
-        API_ENDPOINTS.auth.logout,
-        {
-          method: "POST",
-          body: JSON.stringify({ refresh_token: refresh_token || "" }),
-        },
-        token
-      ).catch((error) => {
+      authService.logout(token).catch((error: Error) => {
         console.error("Logout API call failed:", error);
         // Continue with local logout even if API fails
       });
@@ -235,10 +222,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const data = await apiCall(API_ENDPOINTS.auth.refresh, {
-        method: "POST",
-        body: JSON.stringify({ refresh_token }),
-      });
+      const data = await authService.refreshToken({ refresh_token });
 
       if (!data.success) {
         throw new Error("Token refresh failed");
@@ -258,9 +242,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      // Backend expects PATCH /v1/auth/profile
+      // Backend expects PATCH /auth/profile
       // Only allows: full_name, phone_number, avatar_url
-      const updateData: Record<string, any> = {};
+      const updateData: UpdateProfileRequest = {};
       if (userData.full_name !== undefined)
         updateData.full_name = userData.full_name;
       if (userData.phone_number !== undefined)
@@ -271,14 +255,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("=== Auth Provider Update Profile Debug ===");
       console.log("Sending to API:", updateData);
 
-      const data = await apiCall(
-        API_ENDPOINTS.auth.profile,
-        {
-          method: "PATCH",
-          body: JSON.stringify(updateData),
-        },
-        token
-      );
+      const data = await authService.updateProfile(updateData, token);
 
       console.log("Received from API:", data);
 
@@ -297,6 +274,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const forgotPassword = async (email: string) => {
+    try {
+      const data = await authService.forgotPassword({ email });
+
+      if (!data.success) {
+        throw new Error(data.error?.message || "Failed to send reset email");
+      }
+
+      toast.success("Email reset password telah dikirim!");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal mengirim email reset"
+      );
+      throw error;
+    }
+  };
+
+  const resetPassword = async (oobCode: string, newPassword: string) => {
+    try {
+      const data = await authService.resetPassword({ oobCode, newPassword });
+
+      if (!data.success) {
+        throw new Error(data.error?.message || "Failed to reset password");
+      }
+
+      toast.success("Password berhasil direset!");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal mereset password"
+      );
+      throw error;
+    }
+  };
+
+  const deleteAccount = async (password: string) => {
+    if (!token) {
+      throw new Error("Not authenticated");
+    }
+
+    try {
+      const data = await authService.deleteUser({ password }, token);
+
+      if (!data.success) {
+        throw new Error(data.error?.message || "Failed to delete account");
+      }
+
+      // Clear local state
+      Cookies.remove("token");
+      Cookies.remove("refresh_token");
+      setToken(null);
+      setUser(null);
+
+      toast.success("Akun berhasil dihapus");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Gagal menghapus akun"
+      );
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -308,6 +346,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         logout,
         refreshToken,
         updateProfile,
+        forgotPassword,
+        resetPassword,
+        deleteAccount,
       }}
     >
       {children}

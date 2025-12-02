@@ -2,6 +2,7 @@ import { apiCall, API_ENDPOINTS } from "../api";
 import {
   GradingSession,
   SessionMessage,
+  SendMessageResponse,
   GradingResult,
   ApiResponse,
   PaginatedResponse,
@@ -58,17 +59,17 @@ export const gradingService = {
 
   completeSession: async (
     sessionId: string,
-    data: { final_score: number; readiness_level: string },
-    token: string
+    data?: { final_score?: number; readiness_level?: string },
+    token?: string
   ) => {
     return apiCall(
       API_ENDPOINTS.grading.completeSession(sessionId),
       {
         method: "POST",
-        body: JSON.stringify(data),
+        body: JSON.stringify(data || {}),
       },
-      token
-    ) as Promise<ApiResponse<void>>;
+      token || ""
+    ) as Promise<ApiResponse<GradingSession>>;
   },
 
   // Messages
@@ -103,7 +104,7 @@ export const gradingService = {
         body: JSON.stringify(data),
       },
       token
-    ) as Promise<ApiResponse<SessionMessage>>;
+    ) as Promise<ApiResponse<SendMessageResponse>>;
   },
 
   // Results

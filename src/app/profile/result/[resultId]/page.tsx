@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   ArrowLeftIcon,
@@ -14,20 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGradingSession, useGradingResult } from "@/hooks/useGradingSession";
-
-interface AnalysisReport {
-  summary: string;
-  strengths: string[];
-  weaknesses: string[];
-  recommendations: string[];
-  key_insights: {
-    motivation_score: number;
-    technical_understanding: number;
-    career_alignment: number;
-  };
-  personality_traits: Record<string, string>;
-  career_suggestions: string[];
-}
+import { GradingResult, AnalysisReport } from "@/types";
 
 interface AssessmentDetail {
   id: string;
@@ -35,12 +21,23 @@ interface AssessmentDetail {
   final_score: number;
   readiness_level: string;
   completed_at: string;
-  analysis_report: AnalysisReport;
+  analysis_report: {
+    summary: string;
+    strengths: string[];
+    weaknesses: string[];
+    recommendations: string[];
+    key_insights: {
+      motivation_score: number;
+      technical_understanding: number;
+      career_alignment: number;
+    };
+    personality_traits: Record<string, string>;
+    career_suggestions: string[];
+  };
 }
 
 export default function ResultDetailPage() {
   const params = useParams();
-  const router = useRouter();
   const sessionId = params.resultId as string;
 
   const { data: session, isLoading: isSessionLoading } =
@@ -77,32 +74,74 @@ export default function ResultDetailPage() {
     );
   }
 
+  // Parse analysis_report - API returns strings for strengths, weaknesses, recommendations
+  // Convert them to arrays for display
+  const parseToArray = (value: string | string[]): string[] => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === "string") {
+      // Split by common delimiters or return as single item
+      return value
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    }
+    return [];
+  };
+
   const result: AssessmentDetail = {
     id: resultData.id,
-    target_major: session.metadata?.target_major || "Unknown Major",
-    final_score: resultData.overall_score,
+    target_major: session.target_major || "Unknown Major",
+    final_score: resultData.final_score,
     readiness_level: resultData.readiness_level,
-    completed_at: resultData.created_at, // Using created_at of result as completion time
-    analysis_report: resultData.analysis,
+    completed_at: resultData.created_at,
+    analysis_report: {
+      summary: resultData.analysis_report?.summary || "",
+      strengths: parseToArray(resultData.analysis_report?.strengths || ""),
+      weaknesses: parseToArray(resultData.analysis_report?.weaknesses || ""),
+      recommendations: parseToArray(
+        resultData.analysis_report?.recommendations || ""
+      ),
+      key_insights: resultData.analysis_report?.key_insights || {
+        motivation_score: 0,
+        technical_understanding: 0,
+        career_alignment: 0,
+      },
+      personality_traits: resultData.analysis_report?.personality_traits || {},
+      career_suggestions: resultData.analysis_report?.career_suggestions || [],
+    },
+  };
+
+  // Map readiness_level to Indonesian labels
+  const getReadinessLabel = (level: string) => {
+    switch (level) {
+      case "ready":
+        return "Siap";
+      case "needs_improvement":
+        return "Cukup Siap";
+      case "not_ready":
+        return "Perlu Persiapan";
+      default:
+        return level;
+    }
   };
 
   const getReadinessColor = (level: string) => {
     switch (level) {
-      case "Siap":
+      case "ready":
         return {
           bg: "bg-green-50",
           border: "border-green-200",
           text: "text-green-700",
           light: "text-green-600",
         };
-      case "Cukup Siap":
+      case "needs_improvement":
         return {
           bg: "bg-yellow-50",
           border: "border-yellow-200",
           text: "text-yellow-700",
           light: "text-yellow-600",
         };
-      case "Perlu Persiapan":
+      case "not_ready":
         return {
           bg: "bg-red-50",
           border: "border-red-200",
@@ -120,6 +159,7 @@ export default function ResultDetailPage() {
   };
 
   const colors = getReadinessColor(result.readiness_level);
+  const readinessLabel = getReadinessLabel(result.readiness_level);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50">
@@ -174,7 +214,7 @@ export default function ResultDetailPage() {
                   transition={{ duration: 0.6, delay: 0.3 }}
                 >
                   <CheckCircleIcon className="w-8 h-8" />
-                  <span>{result.readiness_level}</span>
+                  <span>{readinessLabel}</span>
                 </motion.p>
               </div>
 

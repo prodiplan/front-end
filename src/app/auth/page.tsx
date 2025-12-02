@@ -8,6 +8,8 @@ import { EyeIcon, EyeSlashIcon } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import toast from "react-hot-toast";
 import SplitText from "@/components/ui/SplitText";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import { SCHOOLS, MAJORS } from "@/data/schoolsAndMajors";
 
 export default function AuthPage() {
   const [isLogin, setIsLogin] = useState(true);
@@ -24,7 +26,6 @@ export default function AuthPage() {
     birth_date: "",
     school_origin: "",
     dream_major: "",
-    phone_number: "",
   });
   const { login, register } = useAuth();
   const router = useRouter();
@@ -57,6 +58,13 @@ export default function AuthPage() {
     });
   };
 
+  const handleSearchableSelectChange = (name: string, value: string) => {
+    setFormData({
+      ...formData,
+      [name]: value,
+    });
+  };
+
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -67,8 +75,7 @@ export default function AuthPage() {
       !formData.confirmPassword ||
       !formData.birth_date ||
       !formData.school_origin ||
-      !formData.dream_major ||
-      !formData.phone_number
+      !formData.dream_major
     ) {
       toast.error("Mohon lengkapi semua field");
       return;
@@ -103,7 +110,6 @@ export default function AuthPage() {
         birth_date: formData.birth_date,
         school_origin: formData.school_origin,
         dream_major: formData.dream_major,
-        phone_number: formData.phone_number,
       };
       await register(registerData);
       router.push("/dashboard");
@@ -129,7 +135,6 @@ export default function AuthPage() {
       birth_date: "",
       school_origin: "",
       dream_major: "",
-      phone_number: "",
     });
   };
 
@@ -587,91 +592,29 @@ export default function AuthPage() {
                   />
                 </div>
 
-                {/* Asal Sekolah Dropdown */}
-                <div>
-                  <label
-                    htmlFor="school_origin"
-                    className="block text-sm font-medium text-neutral-700 mb-2"
-                  >
-                    Asal Sekolah
-                  </label>
-                  <select
-                    id="school_origin"
-                    name="school_origin"
-                    required
-                    value={formData.school_origin}
-                    onChange={handleRegisterChange}
-                    className="input w-full"
-                  >
-                    <option value="">Pilih Sekolah</option>
-                    <option value="SMA Negeri 1">SMA Negeri 1</option>
-                    <option value="SMA Negeri 3">SMA Negeri 3</option>
-                    <option value="SMA Negeri 8">SMA Negeri 8</option>
-                    <option value="SMA Negeri 70">SMA Negeri 70</option>
-                    <option value="SMA Kanisius">SMA Kanisius</option>
-                    <option value="SMA Labschool">SMA Labschool</option>
-                    <option value="SMA Taruna Nusantara">
-                      SMA Taruna Nusantara
-                    </option>
-                    <option value="SMA Budi Luhur">SMA Budi Luhur</option>
-                    <option value="SMA Kesatuan">SMA Kesatuan</option>
-                    <option value="SMA Santa Ursula">SMA Santa Ursula</option>
-                  </select>
-                </div>
+                {/* Asal Sekolah Searchable Dropdown */}
+                <SearchableSelect
+                  id="school_origin"
+                  name="school_origin"
+                  value={formData.school_origin}
+                  onChange={handleSearchableSelectChange}
+                  options={SCHOOLS}
+                  label="Asal Sekolah"
+                  placeholder="Ketik nama sekolah..."
+                  required
+                />
 
-                {/* Jurusan (Dream Major) Dropdown */}
-                <div>
-                  <label
-                    htmlFor="dream_major"
-                    className="block text-sm font-medium text-neutral-700 mb-2"
-                  >
-                    Jurusan Impian
-                  </label>
-                  <select
-                    id="dream_major"
-                    name="dream_major"
-                    required
-                    value={formData.dream_major}
-                    onChange={handleRegisterChange}
-                    className="input w-full"
-                  >
-                    <option value="">Pilih Jurusan</option>
-                    <option value="Teknik Informatika">
-                      Teknik Informatika
-                    </option>
-                    <option value="Teknik Mesin">Teknik Mesin</option>
-                    <option value="Teknik Sipil">Teknik Sipil</option>
-                    <option value="Kedokteran">Kedokteran</option>
-                    <option value="Hukum">Hukum</option>
-                    <option value="Akuntansi">Akuntansi</option>
-                    <option value="Manajemen Bisnis">Manajemen Bisnis</option>
-                    <option value="Psikologi">Psikologi</option>
-                    <option value="Desain Grafis">Desain Grafis</option>
-                    <option value="Administrasi Publik">
-                      Administrasi Publik
-                    </option>
-                  </select>
-                </div>
-
-                {/* Nomor Telepon Field */}
-                <div>
-                  <label
-                    htmlFor="phone_number"
-                    className="block text-sm font-medium text-neutral-700 mb-2"
-                  >
-                    Nomor Telepon
-                  </label>
-                  <input
-                    id="phone_number"
-                    name="phone_number"
-                    type="tel"
-                    required
-                    value={formData.phone_number}
-                    onChange={handleRegisterChange}
-                    className="input w-full"
-                    placeholder="+62 812-3456-7890"
-                  />
-                </div>
+                {/* Jurusan Impian Searchable Dropdown */}
+                <SearchableSelect
+                  id="dream_major"
+                  name="dream_major"
+                  value={formData.dream_major}
+                  onChange={handleSearchableSelectChange}
+                  options={MAJORS}
+                  label="Jurusan Impian"
+                  placeholder="Ketik nama jurusan..."
+                  required
+                />
 
                 {/* Password Field */}
                 <div>

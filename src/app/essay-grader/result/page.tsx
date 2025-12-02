@@ -88,33 +88,43 @@ export default function ResultPage() {
   }
 
   const result = resultData;
-  // Parse strings if they are comma separated or similar, assuming API returns strings based on interface
-  // But interface says string. Let's assume they are formatted text or we need to split them.
-  // The mock data had arrays. The API spec says "strengths": "Motivasi yang kuat..." (string).
-  // I'll treat them as single strings or try to split by newline/comma if appropriate, or just display as is.
-  // For now, I'll wrap them in array if needed to match the UI loop.
 
-  const strengths = result.analysis_report.strengths
-    ? [result.analysis_report.strengths]
-    : [];
-  const weaknesses = result.analysis_report.weaknesses
-    ? [result.analysis_report.weaknesses]
-    : [];
-  const recommendations = result.analysis_report.recommendations
-    ? [result.analysis_report.recommendations]
-    : [];
-  const detailed_insights = result.analysis_report.key_insights
+  // Helper function to parse strings to arrays
+  const parseToArray = (value: string | string[] | undefined): string[] => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    // Split by common delimiters
+    return value
+      .split(/[,;\n]/)
+      .map((s) => s.trim())
+      .filter((s) => s.length > 0);
+  };
+
+  const strengths = parseToArray(result.analysis_report?.strengths);
+  const weaknesses = parseToArray(result.analysis_report?.weaknesses);
+  const recommendations = parseToArray(result.analysis_report?.recommendations);
+  const detailed_insights = result.analysis_report?.key_insights
     ? Object.entries(result.analysis_report.key_insights).map(
-        ([k, v]) => `${k}: ${v}`
+        ([k, v]) => `${k.replace(/_/g, " ")}: ${v}`
       )
     : [];
 
+  // Map readiness_level to display labels
+  const getReadinessLabel = (level: string) => {
+    switch (level) {
+      case "ready":
+        return "Siap";
+      case "needs_improvement":
+        return "Cukup Siap";
+      case "not_ready":
+        return "Perlu Persiapan";
+      default:
+        return level;
+    }
+  };
+
   const isReadyLevel = result.readiness_level === "ready";
-  const scoreColorClass = isReadyLevel
-    ? "bg-green-600"
-    : result.readiness_level === "needs_improvement" // Assuming this value
-      ? "bg-yellow-600"
-      : "bg-red-600";
+  const readinessLabel = getReadinessLabel(result.readiness_level);
 
   // For styling purposes
   const getScoreCardClasses = () => {
@@ -262,7 +272,7 @@ export default function ResultPage() {
                         Level Kesiapan
                       </p>
                       <p className="text-xl md:text-2xl font-bold text-white">
-                        {result.readiness_level}
+                        {readinessLabel}
                       </p>
                     </div>
                     <div className="flex items-center justify-center space-x-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -10,120 +10,110 @@ import {
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import Link from "next/link";
-
-// Mock data for assessments
-const MOCK_ASSESSMENTS = [
-  {
-    id: "1",
-    session_id: "session-1",
-    target_major: "Computer Science",
-    status: "completed" as const,
-    final_score: 78,
-    readiness_level: "Siap",
-    created_at: "2024-11-01T10:00:00Z",
-    completed_at: "2024-11-01T11:30:00Z",
-  },
-  {
-    id: "2",
-    session_id: "session-2",
-    target_major: "Business Administration",
-    status: "completed" as const,
-    final_score: 85,
-    readiness_level: "Siap",
-    created_at: "2024-11-02T14:30:00Z",
-    completed_at: "2024-11-02T16:00:00Z",
-  },
-  {
-    id: "3",
-    session_id: "session-3",
-    target_major: "Engineering",
-    status: "completed" as const,
-    final_score: 92,
-    readiness_level: "Sangat Siap",
-    created_at: "2024-11-03T09:00:00Z",
-    completed_at: "2024-11-03T10:45:00Z",
-  },
-  {
-    id: "4",
-    session_id: "session-4",
-    target_major: "Medicine",
-    status: "completed" as const,
-    final_score: 88,
-    readiness_level: "Siap",
-    created_at: "2024-11-04T15:20:00Z",
-    completed_at: "2024-11-04T17:10:00Z",
-  },
-  {
-    id: "5",
-    session_id: "session-5",
-    target_major: "Psychology",
-    status: "completed" as const,
-    final_score: 81,
-    readiness_level: "Siap",
-    created_at: "2024-11-05T11:00:00Z",
-    completed_at: "2024-11-05T12:30:00Z",
-  },
-  {
-    id: "6",
-    session_id: "session-6",
-    target_major: "Law",
-    status: "completed" as const,
-    final_score: 79,
-    readiness_level: "Siap",
-    created_at: "2024-11-06T13:15:00Z",
-    completed_at: "2024-11-06T14:45:00Z",
-  },
-  {
-    id: "7",
-    session_id: "session-7",
-    target_major: "Economics",
-    status: "completed" as const,
-    final_score: 87,
-    readiness_level: "Siap",
-    created_at: "2024-11-07T10:30:00Z",
-    completed_at: "2024-11-07T12:00:00Z",
-  },
-  {
-    id: "8",
-    session_id: "session-8",
-    target_major: "Architecture",
-    status: "completed" as const,
-    final_score: 90,
-    readiness_level: "Sangat Siap",
-    created_at: "2024-11-08T14:00:00Z",
-    completed_at: "2024-11-08T15:30:00Z",
-  },
-  {
-    id: "9",
-    session_id: "session-9",
-    target_major: "Arts",
-    status: "analyzing" as const,
-    created_at: "2024-11-09T11:45:00Z",
-  },
-  {
-    id: "10",
-    session_id: "session-10",
-    target_major: "Nursing",
-    status: "analyzing" as const,
-    created_at: "2024-11-10T16:20:00Z",
-  },
-];
+import {
+  useGradingSessions,
+  useGradingResults,
+} from "@/hooks/useGradingSession";
 
 interface Assessment {
   id: string;
   session_id: string;
   target_major: string;
-  status: "completed" | "analyzing";
+  status: "completed" | "not_completed";
   final_score?: number;
   readiness_level?: string;
   created_at: string;
   completed_at?: string;
+  question_count?: number;
+  max_questions?: number;
 }
 
 export default function AssessmentsPage() {
   const { user, isLoading } = useAuth();
   const router = useRouter();
-  const [assessments] = useState<Assessment[]>(MOCK_ASSESSMENTS);
+
+  // Fetch user's grading sessions (for active/analyzing sessions)
+  const { data: sessionsData, isLoading: isLoadingSessions } =
+    useGradingSessions({ limit: 100 });
+
+  // Fetch user's grading results (for completed sessions with results)
+  const { data: resultsData, isLoading: isLoadingResults } = useGradingResults({
+    limit: 100,
+  });
+
+  // Combine sessions and results into assessments
+  const assessments = useMemo<Assessment[]>(() => {
+    const assessmentMap = new Map<string, Assessment>();
+
+    // Get set of session IDs that have results (completed/analyzed)
+    const completedSessionIds = new Set(
+      resultsData?.results?.map((r) => r.session_id) || []
+    );
+
+    // Add sessions
+    if (sessionsData?.sessions) {
+      sessionsData.sessions.forEach((session) => {
+        const hasResult = completedSessionIds.has(session.id);
+        const result = resultsData?.results?.find(
+          (r) => r.session_id === session.id
+        );
+
+        if (hasResult && result) {
+          // Completed - has been analyzed by AI
+          assessmentMap.set(session.id, {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "completed",
+            final_score: result.final_score,
+            readiness_level: result.readiness_level,
+            created_at: session.created_at,
+            completed_at: result.created_at,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          });
+        } else {
+          // Not completed - no result yet (can be continued)
+          assessmentMap.set(session.id, {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "not_completed",
+            created_at: session.created_at,
+            completed_at: undefined,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          });
+        }
+      });
+    }
+
+    // Add results that don't have sessions (edge case)
+    if (resultsData?.results) {
+      resultsData.results.forEach((result) => {
+        if (!assessmentMap.has(result.session_id)) {
+          assessmentMap.set(result.session_id, {
+            id: result.id,
+            session_id: result.session_id,
+            target_major: "Assessment",
+            status: "completed",
+            final_score: result.final_score,
+            readiness_level: result.readiness_level,
+            created_at: result.created_at,
+            completed_at: result.created_at,
+          });
+        }
+      });
+    }
+
+    // Convert to array and sort by created_at (newest first)
+    return Array.from(assessmentMap.values()).sort(
+      (a, b) =>
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  }, [sessionsData, resultsData]);
+
+  const isDataLoading = isLoadingSessions || isLoadingResults;
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -131,7 +121,7 @@ export default function AssessmentsPage() {
     }
   }, [user, isLoading, router]);
 
-  if (isLoading) {
+  if (isLoading || isDataLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
@@ -155,9 +145,24 @@ export default function AssessmentsPage() {
   const completedAssessments = assessments.filter(
     (a) => a.status === "completed"
   );
-  const analyzingAssessments = assessments.filter(
-    (a) => a.status === "analyzing"
+  const notCompletedAssessments = assessments.filter(
+    (a) => a.status === "not_completed"
   );
+
+  // Helper function to format readiness level
+  const formatReadinessLevel = (level?: string) => {
+    if (!level) return "N/A";
+    switch (level.toLowerCase()) {
+      case "ready":
+        return "Siap";
+      case "not_ready":
+        return "Belum Siap";
+      case "needs_improvement":
+        return "Perlu Peningkatan";
+      default:
+        return level;
+    }
+  };
 
   const avgScore =
     completedAssessments.length > 0
@@ -264,6 +269,69 @@ export default function AssessmentsPage() {
         </div>
 
         <div className="space-y-6">
+          {/* Not Completed Section */}
+          {notCompletedAssessments.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-2xl shadow-md p-6"
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <span className="text-red-500">✗</span>
+                <span>Not Completed ({notCompletedAssessments.length})</span>
+              </h2>
+
+              <div className="space-y-3">
+                {notCompletedAssessments.map((assessment, index) => (
+                  <motion.div
+                    key={assessment.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                  >
+                    <Link
+                      href={`/essay-grader?session=${assessment.session_id}`}
+                    >
+                      <motion.div
+                        whileHover={{ x: 4 }}
+                        className="p-4 bg-gradient-to-r from-red-50 to-red-50 border border-red-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <p className="text-lg font-semibold text-gray-900">
+                              {assessment.target_major}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Started on{" "}
+                              {new Date(
+                                assessment.created_at
+                              ).toLocaleDateString("id-ID", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                            <p className="text-xs text-red-500 mt-1">
+                              {assessment.question_count || 0} pertanyaan
+                              dijawab
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <p className="text-sm text-red-600 font-medium">
+                              Lanjutkan →
+                            </p>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           {/* Completed Section */}
           {completedAssessments.length > 0 && (
             <motion.div
@@ -285,7 +353,7 @@ export default function AssessmentsPage() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                   >
-                    <Link href={`/profile/result/${assessment.id}`}>
+                    <Link href={`/profile/result/${assessment.session_id}`}>
                       <motion.div
                         whileHover={{ x: 4 }}
                         className="p-4 bg-gradient-to-r from-green-50 to-green-50 border border-green-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
@@ -312,73 +380,12 @@ export default function AssessmentsPage() {
                               {assessment.final_score}
                             </div>
                             <p className="text-sm text-green-700 font-medium">
-                              {assessment.readiness_level}
+                              {formatReadinessLevel(assessment.readiness_level)}
                             </p>
                           </div>
                         </div>
                       </motion.div>
                     </Link>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {/* Analyzing Section */}
-          {analyzingAssessments.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
-              className="bg-white rounded-2xl shadow-md p-6"
-            >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                <motion.div
-                  animate={{ scale: [1, 1.2, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="w-3 h-3 bg-primary-500 rounded-full"
-                />
-                <span>Analyzing ({analyzingAssessments.length})</span>
-              </h2>
-
-              <div className="space-y-3">
-                {analyzingAssessments.map((assessment, index) => (
-                  <motion.div
-                    key={assessment.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    className="p-4 bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-lg"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <p className="text-lg font-semibold text-gray-900">
-                          {assessment.target_major}
-                        </p>
-                        <p className="text-sm text-gray-500 mt-1">
-                          Started on{" "}
-                          {new Date(assessment.created_at).toLocaleDateString(
-                            "id-ID",
-                            {
-                              weekday: "long",
-                              year: "numeric",
-                              month: "long",
-                              day: "numeric",
-                            }
-                          )}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <motion.div
-                          animate={{ scale: [1, 1.2, 1] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                          className="w-3 h-3 bg-primary-500 rounded-full"
-                        />
-                        <p className="text-sm text-primary-600 font-medium">
-                          Analyzing...
-                        </p>
-                      </div>
-                    </div>
                   </motion.div>
                 ))}
               </div>
