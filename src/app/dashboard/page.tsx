@@ -8,14 +8,13 @@ import {
   SparklesIcon,
   ArrowRightIcon,
   CheckCircleIcon,
-  ClockIcon,
-  ChartBarIcon,
-  AcademicCapIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
 import { DashboardNavBar } from "@/components/ui/dashboard-navbar";
 import { Footer } from "@/components/layout/footer";
+import { Features } from "@/components/sections/features";
+import { HowItWorks } from "@/components/sections/how-it-works";
 
 export default function DashboardPage() {
   const { user, isLoading, logout } = useAuth();
@@ -69,24 +68,6 @@ export default function DashboardPage() {
       },
     },
   };
-
-  const features = [
-    {
-      icon: ClockIcon,
-      title: "Cepat & Efisien",
-      description: "Selesaikan dalam waktu singkat dengan hasil akurat",
-    },
-    {
-      icon: ChartBarIcon,
-      title: "Analisis Mendalam",
-      description: "Penjelasan detail tentang kesiapan dan rekomendasi",
-    },
-    {
-      icon: AcademicCapIcon,
-      title: "Expert Insight",
-      description: "Nasihat berdasarkan pengalaman ribuan siswa",
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-white">
@@ -196,170 +177,11 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Features Section */}
-        <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
-          <div className="mx-auto max-w-7xl">
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-                Apa yang akan Anda dapatkan?
-              </h2>
-              <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-                Dapatkan analisis komprehensif untuk membantu keputusan jurusan
-                Anda
-              </p>
-            </motion.div>
+        {/* Features Section from Landing Page */}
+        <Features />
 
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-3 gap-8"
-            >
-              {features.map((feature, index) => (
-                <motion.div
-                  key={index}
-                  variants={itemVariants}
-                  whileHover={{ y: -8 }}
-                  className="card card-hover p-8"
-                >
-                  <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-100 rounded-full mb-6">
-                    <feature.icon className="w-7 h-7 text-primary-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-neutral-900 mb-3">
-                    {feature.title}
-                  </h3>
-                  <p className="text-neutral-600 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* How It Works Section */}
-        <section
-          id="how-it-works"
-          className="py-20 px-4 sm:px-6 lg:px-8 bg-white"
-        >
-          <div className="mx-auto max-w-7xl">
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center mb-16"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-neutral-900 mb-4">
-                Cara Kerja Test Kami
-              </h2>
-              <p className="text-lg text-neutral-600 max-w-2xl mx-auto">
-                Proses simple namun mendalam untuk hasil maksimal
-              </p>
-            </motion.div>
-
-            <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              whileInView="visible"
-              viewport={{ once: true }}
-              className="grid grid-cols-1 md:grid-cols-4 gap-4"
-            >
-              {[
-                {
-                  step: "01",
-                  title: "Mulai Test",
-                  description: "Jawab pertanyaan essay dengan jujur",
-                },
-                {
-                  step: "02",
-                  title: "Analisis AI",
-                  description: "Sistem AI menganalisis jawaban Anda",
-                },
-                {
-                  step: "03",
-                  title: "Dapatkan Insight",
-                  description: "Lihat hasil analisis mendalam",
-                },
-                {
-                  step: "04",
-                  title: "Ambil Tindakan",
-                  description: "Ikuti rekomendasi untuk sukses",
-                },
-              ].map((item, index) => (
-                <motion.div
-                  key={index}
-                  variants={itemVariants}
-                  className="relative"
-                >
-                  <div className="card p-6 text-center h-full flex flex-col items-center justify-center">
-                    <div className="text-4xl font-bold text-primary-600 mb-3">
-                      {item.step}
-                    </div>
-                    <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-neutral-600">
-                      {item.description}
-                    </p>
-                  </div>
-                  {index < 3 && (
-                    <div className="hidden md:block absolute -right-2 top-1/2 transform -translate-y-1/2">
-                      <ArrowRightIcon className="w-8 h-8 text-primary-300" />
-                    </div>
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="relative py-20 overflow-hidden">
-          <div className="absolute inset-0 bg-primary-600" />
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 -left-20 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob" />
-            <div className="absolute -bottom-8 -right-20 w-40 h-40 bg-white rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
-          </div>
-
-          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
-              className="text-center"
-            >
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-                Jangan Ragu Lagi, Mulai Sekarang!
-              </h2>
-              <p className="text-lg text-white text-opacity-90 max-w-2xl mx-auto mb-8">
-                Ribuan siswa telah menemukan jurusan impian mereka melalui
-                platform kami. Saatnya Anda untuk menemukan potensi sejati.
-              </p>
-              <motion.div
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Link
-                  href="/essay-grader"
-                  className="inline-flex items-center space-x-2 bg-white text-primary-600 font-semibold px-8 py-4 rounded-lg hover:bg-neutral-100 transition-all shadow-lg"
-                >
-                  <span>Mulai Test Gratis Sekarang</span>
-                  <ArrowRightIcon className="w-5 h-5" />
-                </Link>
-              </motion.div>
-            </motion.div>
-          </div>
-        </section>
+        {/* How It Works Section from Landing Page */}
+        <HowItWorks />
       </main>
 
       <Footer />
