@@ -755,29 +755,6 @@ export default function AuthPage() {
               </form>
             )}
           </motion.div>
-
-          {/* Demo Account (Login only) */}
-          {isLogin && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.3 }}
-              className="text-center mt-4"
-            >
-              <p className="text-sm text-neutral-500">
-                Mau coba dulu?{" "}
-                <button
-                  onClick={() => {
-                    setEmail("demo@prodiplan.id");
-                    setPassword("demo123");
-                  }}
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  Gunakan akun demo
-                </button>
-              </p>
-            </motion.div>
-          )}
         </motion.div>
       </div>
     </div>
