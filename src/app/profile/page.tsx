@@ -511,7 +511,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-3">
-                  {assessments.length > 5 && (
+                  {assessments.length >= 1 && (
                     <Link href="/profile/assessments">
                       <button className="w-full py-2 text-primary-600 font-medium text-sm hover:text-primary-700 transition-colors border-t border-gray-200 pt-3">
                         Show All ({assessments.length})
