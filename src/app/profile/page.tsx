@@ -29,7 +29,7 @@ interface Assessment {
   id: string;
   session_id: string;
   target_major: string;
-  status: "completed" | "not_completed";
+  status: "completed" | "in_progress" | "not_completed";
   final_score?: number;
   readiness_level?: string;
   created_at: string;
@@ -91,15 +91,29 @@ export default function ProfilePage() {
             question_count: session.question_count,
             max_questions: session.max_questions,
           };
+        } else if (session.status === "active") {
+          // In Progress - session is still active and can be continued
+          return {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "in_progress" as const,
+            final_score: session.current_score,
+            readiness_level: "Sedang Berlangsung",
+            created_at: session.created_at,
+            completed_at: undefined,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          };
         } else {
-          // Not completed - no result yet (can be continued)
+          // Not completed - session expired or cannot be continued
           return {
             id: session.id,
             session_id: session.id,
             target_major: session.target_major,
             status: "not_completed" as const,
             final_score: session.current_score,
-            readiness_level: "Belum Selesai",
+            readiness_level: "Tidak Selesai",
             created_at: session.created_at,
             completed_at: undefined,
             question_count: session.question_count,
@@ -298,36 +312,50 @@ export default function ProfilePage() {
               <h3 className="text-lg font-bold text-gray-900 mb-4">
                 Assessment Summary
               </h3>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 {/* Completed */}
-                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <div className="bg-green-50 rounded-lg p-3 border border-green-200">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-medium text-green-700 uppercase">
                       Completed
                     </span>
-                    <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                    <CheckCircleIcon className="w-4 h-4 text-green-600" />
                   </div>
-                  <p className="text-2xl font-bold text-green-700">
+                  <p className="text-xl font-bold text-green-700">
                     {assessments.filter((a) => a.status === "completed").length}
                   </p>
-                  <p className="text-xs text-green-600 mt-1">Assessments</p>
                 </div>
 
-                {/* Pending/Not Completed */}
-                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                {/* In Progress */}
+                <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-yellow-700 uppercase">
-                      Not Completed
+                    <span className="text-xs font-medium text-blue-700 uppercase">
+                      In Progress
                     </span>
-                    <ClockIcon className="w-5 h-5 text-yellow-600" />
+                    <ClockIcon className="w-4 h-4 text-blue-600" />
                   </div>
-                  <p className="text-2xl font-bold text-yellow-700">
+                  <p className="text-xl font-bold text-blue-700">
+                    {
+                      assessments.filter((a) => a.status === "in_progress")
+                        .length
+                    }
+                  </p>
+                </div>
+
+                {/* Not Completed */}
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-medium text-gray-700 uppercase">
+                      Not Done
+                    </span>
+                    <ExclamationTriangleIcon className="w-4 h-4 text-gray-500" />
+                  </div>
+                  <p className="text-xl font-bold text-gray-600">
                     {
                       assessments.filter((a) => a.status === "not_completed")
                         .length
                     }
                   </p>
-                  <p className="text-xs text-yellow-600 mt-1">Belum Selesai</p>
                 </div>
               </div>
             </motion.div>
@@ -416,13 +444,13 @@ export default function ProfilePage() {
                                 </div>
                               </motion.div>
                             </Link>
-                          ) : (
+                          ) : assessment.status === "in_progress" ? (
                             <Link
                               href={`/essay-grader?session=${assessment.session_id}`}
                             >
                               <motion.div
                                 whileHover={{ x: 4 }}
-                                className="p-3 bg-red-50 border border-red-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                                className="p-3 bg-blue-50 border border-blue-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1">
@@ -434,22 +462,48 @@ export default function ProfilePage() {
                                         assessment.created_at
                                       ).toLocaleDateString("id-ID")}
                                     </p>
-                                    <p className="text-xs text-red-500 mt-1">
-                                      {assessment.question_count || 0}{" "}
+                                    <p className="text-xs text-blue-600 mt-1">
+                                      {assessment.question_count || 0}/
+                                      {assessment.max_questions || 10}{" "}
                                       pertanyaan dijawab
                                     </p>
                                   </div>
                                   <div className="flex items-center space-x-1">
-                                    <span className="text-red-500 text-xs">
-                                      ✗
-                                    </span>
-                                    <p className="text-xs text-red-600 font-medium">
-                                      Not Completed →
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                                    <p className="text-xs text-blue-600 font-medium">
+                                      Lanjutkan →
                                     </p>
                                   </div>
                                 </div>
                               </motion.div>
                             </Link>
+                          ) : (
+                            <motion.div className="p-3 bg-gray-50 border border-gray-200 rounded-lg opacity-60 cursor-not-allowed">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-semibold text-gray-600">
+                                    {assessment.target_major}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {new Date(
+                                      assessment.created_at
+                                    ).toLocaleDateString("id-ID")}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {assessment.question_count || 0} pertanyaan
+                                    dijawab
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-gray-400 text-xs">
+                                    ✗
+                                  </span>
+                                  <p className="text-xs text-gray-500 font-medium">
+                                    Tidak Selesai
+                                  </p>
+                                </div>
+                              </div>
+                            </motion.div>
                           )}
                         </div>
                       ))}

@@ -19,7 +19,7 @@ interface Assessment {
   id: string;
   session_id: string;
   target_major: string;
-  status: "completed" | "not_completed";
+  status: "completed" | "in_progress" | "not_completed";
   final_score?: number;
   readiness_level?: string;
   created_at: string;
@@ -72,8 +72,20 @@ export default function AssessmentsPage() {
             question_count: session.question_count,
             max_questions: session.max_questions,
           });
+        } else if (session.status === "active") {
+          // In Progress - session is still active and can be continued
+          assessmentMap.set(session.id, {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "in_progress",
+            created_at: session.created_at,
+            completed_at: undefined,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          });
         } else {
-          // Not completed - no result yet (can be continued)
+          // Not completed - session expired or cannot be continued
           assessmentMap.set(session.id, {
             id: session.id,
             session_id: session.id,
@@ -145,6 +157,9 @@ export default function AssessmentsPage() {
   const completedAssessments = assessments.filter(
     (a) => a.status === "completed"
   );
+  const inProgressAssessments = assessments.filter(
+    (a) => a.status === "in_progress"
+  );
   const notCompletedAssessments = assessments.filter(
     (a) => a.status === "not_completed"
   );
@@ -191,12 +206,34 @@ export default function AssessmentsPage() {
                 Back to Profile
               </span>
             </Link>
-            <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 bg-primary-100 rounded-full flex items-center justify-center">
-                <SparklesIcon className="w-5 h-5 text-primary-600" />
+            <Link href="/dashboard" className="flex items-center space-x-2">
+              <div className="relative">
+                <div className="w-8 sm:w-10 h-8 sm:h-10 bg-blue-500 bg-opacity-20 rounded-full flex items-center justify-center">
+                  <svg
+                    className="w-5 sm:w-6 h-5 sm:h-6 text-blue-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 14l9-5-9-5-9 5 9 5z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
+                    />
+                  </svg>
+                </div>
               </div>
-              <span className="font-semibold text-gray-900">ProdiPlan</span>
-            </div>
+              <span className="text-gray-900 text-lg sm:text-xl font-bold">
+                ProdiPlan
+              </span>
+            </Link>
           </div>
         </div>
       </div>
@@ -220,14 +257,14 @@ export default function AssessmentsPage() {
         </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0 }}
             className="bg-white rounded-lg shadow p-6"
           >
-            <p className="text-sm text-gray-600 mb-2">Total Assessment</p>
+            <p className="text-sm text-gray-600 mb-2">Total</p>
             <p className="text-3xl font-bold text-primary-600">
               {assessments.length}
             </p>
@@ -248,17 +285,29 @@ export default function AssessmentsPage() {
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+            transition={{ duration: 0.4, delay: 0.15 }}
             className="bg-white rounded-lg shadow p-6"
           >
-            <p className="text-sm text-gray-600 mb-2">Average Score</p>
-            <p className="text-3xl font-bold text-blue-600">{avgScore}</p>
+            <p className="text-sm text-gray-600 mb-2">In Progress</p>
+            <p className="text-3xl font-bold text-blue-600">
+              {inProgressAssessments.length}
+            </p>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            className="bg-white rounded-lg shadow p-6"
+          >
+            <p className="text-sm text-gray-600 mb-2">Average Score</p>
+            <p className="text-3xl font-bold text-primary-600">{avgScore}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
             className="bg-white rounded-lg shadow p-6"
           >
             <p className="text-sm text-gray-600 mb-2">Highest Score</p>
@@ -269,8 +318,8 @@ export default function AssessmentsPage() {
         </div>
 
         <div className="space-y-6">
-          {/* Not Completed Section */}
-          {notCompletedAssessments.length > 0 && (
+          {/* In Progress Section */}
+          {inProgressAssessments.length > 0 && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -278,12 +327,12 @@ export default function AssessmentsPage() {
               className="bg-white rounded-2xl shadow-md p-6"
             >
               <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                <span className="text-red-500">✗</span>
-                <span>Not Completed ({notCompletedAssessments.length})</span>
+                <span className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></span>
+                <span>In Progress ({inProgressAssessments.length})</span>
               </h2>
 
               <div className="space-y-3">
-                {notCompletedAssessments.map((assessment, index) => (
+                {inProgressAssessments.map((assessment, index) => (
                   <motion.div
                     key={assessment.id}
                     initial={{ opacity: 0, x: -20 }}
@@ -295,7 +344,7 @@ export default function AssessmentsPage() {
                     >
                       <motion.div
                         whileHover={{ x: 4 }}
-                        className="p-4 bg-gradient-to-r from-red-50 to-red-50 border border-red-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                        className="p-4 bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
@@ -313,19 +362,77 @@ export default function AssessmentsPage() {
                                 day: "numeric",
                               })}
                             </p>
-                            <p className="text-xs text-red-500 mt-1">
-                              {assessment.question_count || 0} pertanyaan
+                            <p className="text-xs text-blue-600 mt-1">
+                              {assessment.question_count || 0}/
+                              {assessment.max_questions || 10} pertanyaan
                               dijawab
                             </p>
                           </div>
                           <div className="flex items-center space-x-2">
-                            <p className="text-sm text-red-600 font-medium">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                            <p className="text-sm text-blue-600 font-medium">
                               Lanjutkan →
                             </p>
                           </div>
                         </div>
                       </motion.div>
                     </Link>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Not Completed Section */}
+          {notCompletedAssessments.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="bg-white rounded-2xl shadow-md p-6"
+            >
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
+                <span className="text-gray-400">✗</span>
+                <span>Tidak Selesai ({notCompletedAssessments.length})</span>
+              </h2>
+
+              <div className="space-y-3">
+                {notCompletedAssessments.map((assessment, index) => (
+                  <motion.div
+                    key={assessment.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                  >
+                    <motion.div className="p-4 bg-gradient-to-r from-gray-50 to-gray-50 border border-gray-200 rounded-lg opacity-60 cursor-not-allowed">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="text-lg font-semibold text-gray-600">
+                            {assessment.target_major}
+                          </p>
+                          <p className="text-sm text-gray-400 mt-1">
+                            Started on{" "}
+                            {new Date(assessment.created_at).toLocaleDateString(
+                              "id-ID",
+                              {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              }
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {assessment.question_count || 0} pertanyaan dijawab
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <p className="text-sm text-gray-500 font-medium">
+                            Tidak Selesai
+                          </p>
+                        </div>
+                      </div>
+                    </motion.div>
                   </motion.div>
                 ))}
               </div>

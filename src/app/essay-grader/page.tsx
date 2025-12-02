@@ -69,6 +69,8 @@ export default function EssayGraderPage() {
   const socketRef = useRef<Socket | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const questionsRef = useRef<Question[]>([]);
+  const answersRef = useRef<{ [key: string]: string }>({});
+  const currentQuestionIndexRef = useRef<number>(0);
   const isCreatingSession = useRef(false); // Guard against double creation
 
   // Fetch user's sessions to check for active sessions
@@ -105,6 +107,16 @@ export default function EssayGraderPage() {
     questionsRef.current = questions;
   }, [questions]);
 
+  // Keep answersRef in sync with answers state
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+
+  // Keep currentQuestionIndexRef in sync
+  useEffect(() => {
+    currentQuestionIndexRef.current = currentQuestionIndex;
+  }, [currentQuestionIndex]);
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/auth");
@@ -118,7 +130,7 @@ export default function EssayGraderPage() {
     const timer = setInterval(() => {
       setTimeLeft((prev) => {
         if (prev <= 1) {
-          handleSubmitTest();
+          handleSubmitTest(true); // Auto submit when time is up
           return 0;
         }
         return prev - 1;
@@ -307,12 +319,21 @@ export default function EssayGraderPage() {
     }
   };
 
+  const MIN_ANSWER_LENGTH = 100; // Minimum karakter untuk jawaban
+
   const handleNext = async () => {
     const currentQuestion = questions[currentQuestionIndex];
     const answer = answers[currentQuestion?.id] || "";
 
     if (!currentQuestion || !answer.trim()) {
       alert("Silakan isi jawaban terlebih dahulu");
+      return;
+    }
+
+    if (answer.trim().length < MIN_ANSWER_LENGTH) {
+      alert(
+        `Jawaban minimal ${MIN_ANSWER_LENGTH} karakter. Saat ini: ${answer.trim().length} karakter`
+      );
       return;
     }
 
@@ -612,14 +633,55 @@ export default function EssayGraderPage() {
     return false;
   };
 
-  const handleSubmitTest = async () => {
+  const handleSubmitTest = async (isAutoSubmit: boolean = false) => {
+    console.log("🚀 handleSubmitTest called, isAutoSubmit:", isAutoSubmit);
+
     if (!sessionId || !token) {
       console.error("No session ID or token found");
       return;
     }
 
-    const currentQuestion = questions[currentQuestionIndex];
-    const answer = answers[currentQuestion?.id] || "";
+    // Use refs for auto-submit to get latest values (avoid closure issues)
+    const currentQuestions = isAutoSubmit ? questionsRef.current : questions;
+    const currentAnswers = isAutoSubmit ? answersRef.current : answers;
+    const currentIdx = isAutoSubmit
+      ? currentQuestionIndexRef.current
+      : currentQuestionIndex;
+
+    const currentQuestion = currentQuestions[currentIdx];
+    const answer = currentAnswers[currentQuestion?.id] || "";
+
+    console.log("📝 Current question:", currentQuestion?.id);
+    console.log("📝 Current answer:", answer);
+    console.log("📝 Answer length:", answer.trim().length);
+    console.log("📝 All answers:", currentAnswers);
+
+    // Validate all answers if NOT auto submit (manual submit)
+    if (!isAutoSubmit) {
+      // Check for unanswered questions
+      const unansweredQuestions = questions.filter(
+        (q) => !answers[q.id] || answers[q.id].trim().length === 0
+      );
+
+      if (unansweredQuestions.length > 0) {
+        alert(
+          `Masih ada ${unansweredQuestions.length} soal yang belum dijawab. Silakan lengkapi semua jawaban.`
+        );
+        return;
+      }
+
+      // Check for answers below minimum character count
+      const shortAnswers = questions.filter(
+        (q) => answers[q.id] && answers[q.id].trim().length < MIN_ANSWER_LENGTH
+      );
+
+      if (shortAnswers.length > 0) {
+        alert(
+          `Ada ${shortAnswers.length} jawaban yang kurang dari ${MIN_ANSWER_LENGTH} karakter. Silakan lengkapi jawaban Anda.`
+        );
+        return;
+      }
+    }
 
     setIsSubmitting(true);
     setCurrentStep("loading");
@@ -707,7 +769,7 @@ export default function EssayGraderPage() {
           onAnswer={handleAnswer}
           onNext={handleNext}
           onPrevious={handlePrevious}
-          onSubmit={handleSubmitTest}
+          onSubmit={() => handleSubmitTest(false)}
           timeLeft={timeLeft}
           formatTime={formatTime}
           isSubmitting={isSubmitting}
@@ -722,6 +784,7 @@ export default function EssayGraderPage() {
           currentScore={currentScore}
           isWaitingForQuestion={isWaitingForQuestion}
           socketConnected={socketConnected}
+          minAnswerLength={MIN_ANSWER_LENGTH}
         />
       )}
 
@@ -1140,6 +1203,7 @@ function TestScreen({
   currentScore,
   isWaitingForQuestion,
   socketConnected,
+  minAnswerLength,
 }: {
   question: Question | undefined;
   currentQuestionIndex: number;
@@ -1160,6 +1224,7 @@ function TestScreen({
   currentScore: number;
   isWaitingForQuestion: boolean;
   socketConnected: boolean;
+  minAnswerLength: number;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const progress =
@@ -1353,14 +1418,15 @@ function TestScreen({
                     </div>
 
                     {/* Character count indicator */}
-                    {answer.length < 100 && (
+                    {answer.length < minAnswerLength && (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         className="bg-yellow-50 border border-yellow-200 rounded-lg p-2 mb-2 flex-shrink-0"
                       >
                         <p className="text-xs text-yellow-800">
-                          💡 Min 100 karakter untuk jawaban detail
+                          💡 Min {minAnswerLength} karakter untuk jawaban detail
+                          ({answer.length}/{minAnswerLength})
                         </p>
                       </motion.div>
                     )}
@@ -1416,13 +1482,18 @@ function TestScreen({
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={onNext}
-                        disabled={isWaitingForQuestion}
+                        disabled={
+                          isWaitingForQuestion ||
+                          answer.trim().length < minAnswerLength
+                        }
                         className="btn btn-primary px-3 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                       >
                         <span>
                           {isWaitingForQuestion
                             ? "Menunggu..."
-                            : "Kirim & Lanjut"}
+                            : answer.trim().length < minAnswerLength
+                              ? `Min ${minAnswerLength} karakter`
+                              : "Kirim & Lanjut"}
                         </span>
                         {isWaitingForQuestion && (
                           <motion.div
@@ -1549,12 +1620,27 @@ function TestScreen({
                     </div>
 
                     {answers[q.id] ? (
-                      <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
+                      <div
+                        className={`rounded-lg p-3 border ${
+                          answers[q.id].trim().length < minAnswerLength
+                            ? "bg-orange-50 border-orange-200"
+                            : "bg-neutral-50 border-neutral-200"
+                        }`}
+                      >
                         <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed text-xs">
                           {answers[q.id]}
                         </p>
-                        <p className="text-xs text-neutral-500 mt-2">
+                        <p
+                          className={`text-xs mt-2 ${
+                            answers[q.id].trim().length < minAnswerLength
+                              ? "text-orange-600 font-medium"
+                              : "text-neutral-500"
+                          }`}
+                        >
                           {answers[q.id].length} karakter
+                          {answers[q.id].trim().length < minAnswerLength && (
+                            <span> (min. {minAnswerLength})</span>
+                          )}
                         </p>
                       </div>
                     ) : (
@@ -1570,32 +1656,52 @@ function TestScreen({
 
               {/* Submit Button */}
               <div className="mt-3 flex justify-center">
-                {Object.entries(answers).filter(
-                  ([, value]) => value && value.trim().length > 0
-                ).length === questions.length ? (
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={onSubmit}
-                    disabled={isSubmitting}
-                    className="btn btn-primary px-6 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-                  >
-                    <span>
-                      {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
-                    </span>
-                    <SparklesIcon className="w-4 h-4" />
-                  </motion.button>
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="bg-yellow-50 rounded-lg p-2 border border-yellow-200"
-                  >
-                    <p className="text-yellow-800 font-medium text-xs">
-                      ⚠️ Isi semua soal sebelum submit
-                    </p>
-                  </motion.div>
-                )}
+                {(() => {
+                  const unansweredCount = questions.filter(
+                    (q) => !answers[q.id] || answers[q.id].trim().length === 0
+                  ).length;
+                  const shortAnswerCount = questions.filter(
+                    (q) =>
+                      answers[q.id] &&
+                      answers[q.id].trim().length > 0 &&
+                      answers[q.id].trim().length < minAnswerLength
+                  ).length;
+                  const canSubmit =
+                    unansweredCount === 0 && shortAnswerCount === 0;
+
+                  if (canSubmit) {
+                    return (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={onSubmit}
+                        disabled={isSubmitting}
+                        className="btn btn-primary px-6 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                      >
+                        <span>
+                          {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
+                        </span>
+                        <SparklesIcon className="w-4 h-4" />
+                      </motion.button>
+                    );
+                  } else {
+                    return (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="bg-yellow-50 rounded-lg p-2 border border-yellow-200"
+                      >
+                        <p className="text-yellow-800 font-medium text-xs">
+                          {unansweredCount > 0 &&
+                            `⚠️ ${unansweredCount} soal belum dijawab`}
+                          {unansweredCount > 0 && shortAnswerCount > 0 && " | "}
+                          {shortAnswerCount > 0 &&
+                            `⚠️ ${shortAnswerCount} jawaban kurang dari ${minAnswerLength} karakter`}
+                        </p>
+                      </motion.div>
+                    );
+                  }
+                })()}
               </div>
             </div>
           )}
