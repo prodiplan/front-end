@@ -199,9 +199,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     // Call logout endpoint if token exists
     const token = Cookies.get("token");
+    const refreshToken = Cookies.get("refresh_token");
     if (token) {
       // Fire and forget - don't await logout endpoint
-      authService.logout(token).catch((error: Error) => {
+      authService.logout(token, refreshToken).catch((error: Error) => {
         console.error("Logout API call failed:", error);
         // Continue with local logout even if API fails
       });

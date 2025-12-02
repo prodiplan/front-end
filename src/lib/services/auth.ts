@@ -83,11 +83,12 @@ export const authService = {
    * Logout user
    * POST /auth/logout
    */
-  logout: async (token: string) => {
+  logout: async (token: string, refreshToken?: string) => {
     return apiCall(
       API_ENDPOINTS.auth.logout,
       {
         method: "POST",
+        body: JSON.stringify({ refresh_token: refreshToken }),
       },
       token
     ) as Promise<ApiResponse<void>>;
