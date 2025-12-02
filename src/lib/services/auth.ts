@@ -38,6 +38,7 @@ export interface UpdateProfileRequest {
   full_name?: string;
   phone_number?: string;
   avatar_url?: string;
+  dream_major?: string;
 }
 
 export interface DeleteUserRequest {

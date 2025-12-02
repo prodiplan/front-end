@@ -9,7 +9,10 @@ import {
   ClockIcon,
   SparklesIcon,
   ExclamationTriangleIcon,
+  ChevronDownIcon,
 } from "@heroicons/react/24/outline";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import { MAJORS } from "@/data/schoolsAndMajors";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
 import Link from "next/link";
@@ -61,6 +64,9 @@ export default function EssayGraderPage() {
     null
   );
   const [showActiveSessionPopup, setShowActiveSessionPopup] = useState(false);
+  const [selectedMajor, setSelectedMajor] = useState<string>(
+    user?.dream_major || ""
+  );
 
   const createSessionMutation = useCreateSession();
   const completeSessionMutation = useCompleteSession();
@@ -93,6 +99,13 @@ export default function EssayGraderPage() {
       }
     }
   }, [sessionsData]);
+
+  // Initialize selectedMajor with user's dream_major when user loads
+  useEffect(() => {
+    if (user?.dream_major && !selectedMajor) {
+      setSelectedMajor(user.dream_major);
+    }
+  }, [user?.dream_major]);
 
   // Handle resume session from URL parameter
   useEffect(() => {
@@ -520,6 +533,12 @@ export default function EssayGraderPage() {
       return;
     }
 
+    // Validate major selection
+    if (!selectedMajor) {
+      alert("Silakan pilih jurusan yang ingin diuji terlebih dahulu");
+      return;
+    }
+
     // Prevent double session creation
     if (isCreatingSession.current || createSessionMutation.isPending) {
       console.log("⚠️ Session creation already in progress, ignoring...");
@@ -536,7 +555,7 @@ export default function EssayGraderPage() {
       isCreatingSession.current = true;
 
       const response = await createSessionMutation.mutateAsync({
-        target_major: user?.dream_major || "General",
+        target_major: selectedMajor,
         max_questions: 5,
         session_duration_minutes: 15,
       });
@@ -757,6 +776,8 @@ export default function EssayGraderPage() {
           isStarting={createSessionMutation.isPending}
           showActiveSessionPopup={showActiveSessionPopup}
           onClosePopup={() => setShowActiveSessionPopup(false)}
+          selectedMajor={selectedMajor}
+          onMajorChange={setSelectedMajor}
         />
       )}
 
@@ -802,6 +823,8 @@ function IntroScreen({
   isStarting,
   showActiveSessionPopup,
   onClosePopup,
+  selectedMajor,
+  onMajorChange,
 }: {
   user: any;
   onStart: () => void;
@@ -811,6 +834,8 @@ function IntroScreen({
   isStarting: boolean;
   showActiveSessionPopup: boolean;
   onClosePopup: () => void;
+  selectedMajor: string;
+  onMajorChange: (major: string) => void;
 }) {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -983,20 +1008,33 @@ function IntroScreen({
                 </ul>
               </motion.div>
 
-              {/* User Info */}
+              {/* User Info & Major Selection */}
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 0.6 }}
-                className="bg-neutral-100 rounded-lg p-3 mb-4"
+                className="bg-neutral-100 rounded-lg p-4 mb-4"
               >
-                <p className="text-xs text-neutral-600">
+                <p className="text-xs text-neutral-600 mb-3">
                   <span className="font-medium">Peserta:</span> {user.full_name}
                 </p>
-                <p className="text-xs text-neutral-600">
-                  <span className="font-medium">Jurusan Pilihan:</span>{" "}
-                  {user.dream_major || "Belum dipilih"}
-                </p>
+
+                {/* Major Selection Dropdown */}
+                <div className="mt-2">
+                  <SearchableSelect
+                    id="assessment_major"
+                    name="assessment_major"
+                    value={selectedMajor}
+                    onChange={(name, value) => onMajorChange(value)}
+                    options={MAJORS}
+                    label="Jurusan yang Akan Diuji"
+                    placeholder="Pilih atau ketik nama jurusan..."
+                    required
+                  />
+                  <p className="text-xs text-neutral-500 mt-1">
+                    Pilih jurusan yang ingin Anda uji kesiapannya
+                  </p>
+                </div>
               </motion.div>
 
               {/* Active Session Alert */}

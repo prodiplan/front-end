@@ -19,6 +19,8 @@ import {
   ArrowLeftIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import { MAJORS } from "@/data/schoolsAndMajors";
 import Link from "next/link";
 import {
   useGradingSessions,
@@ -183,7 +185,7 @@ export default function ProfilePage() {
       // Prepare update data - only send fields that can be updated
       const updateData = {
         full_name: formData.full_name,
-        phone_number: formData.phone_number,
+        dream_major: formData.dream_major,
       };
 
       console.log("=== Profile Save Debug ===");
@@ -295,9 +297,6 @@ export default function ProfilePage() {
                     <PencilIcon className="w-4 h-4" />
                     <span>Edit</span>
                   </motion.button>
-                  <button className="flex-1 btn btn-secondary text-sm py-2 flex items-center justify-center gap-1">
-                    <span>Share</span>
-                  </button>
                 </div>
               </div>
             </div>
@@ -566,38 +565,21 @@ export default function ProfilePage() {
                     </p>
                   </div>
 
-                  {/* Phone Number */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nomor Telepon
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone_number || ""}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          phone_number: e.target.value,
-                        })
-                      }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none text-gray-900"
-                      placeholder="+62..."
-                    />
-                  </div>
-
                   {/* Birth Date */}
-                  <div>
+                  <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       Tanggal Lahir
                     </label>
                     <input
                       type="date"
                       value={formData.birth_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, birth_date: e.target.value })
-                      }
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none text-gray-900"
+                      disabled
+                      className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Tanggal lahir tidak bisa diubah (ditetapkan saat
+                      registrasi)
+                    </p>
                   </div>
 
                   {/* School Origin - Read Only */}
@@ -617,20 +599,22 @@ export default function ProfilePage() {
                     </p>
                   </div>
 
-                  {/* Dream Major - Read Only */}
+                  {/* Dream Major - Editable with Dropdown */}
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Jurusan Pilihan
-                    </label>
-                    <input
-                      type="text"
+                    <SearchableSelect
+                      id="dream_major"
+                      name="dream_major"
                       value={formData.dream_major}
-                      disabled
-                      className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-600 cursor-not-allowed"
+                      onChange={(name, value) =>
+                        setFormData({ ...formData, dream_major: value })
+                      }
+                      options={MAJORS}
+                      label="Jurusan Pilihan"
+                      placeholder="Pilih atau ketik nama jurusan..."
+                      required
                     />
                     <p className="text-xs text-gray-500 mt-1">
-                      Jurusan pilihan tidak bisa diubah (ditetapkan saat
-                      registrasi)
+                      Anda dapat mengubah jurusan pilihan kapan saja
                     </p>
                   </div>
                 </div>

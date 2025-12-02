@@ -243,7 +243,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       // Backend expects PATCH /auth/profile
-      // Only allows: full_name, phone_number, avatar_url
+      // Only allows: full_name, phone_number, avatar_url, dream_major
       const updateData: UpdateProfileRequest = {};
       if (userData.full_name !== undefined)
         updateData.full_name = userData.full_name;
@@ -251,6 +251,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         updateData.phone_number = userData.phone_number;
       if (userData.avatar_url !== undefined)
         updateData.avatar_url = userData.avatar_url;
+      if (userData.dream_major !== undefined)
+        updateData.dream_major = userData.dream_major;
 
       console.log("=== Auth Provider Update Profile Debug ===");
       console.log("Sending to API:", updateData);
