@@ -168,8 +168,12 @@ export default function AssessmentsPage() {
   const formatReadinessLevel = (level?: string) => {
     if (!level) return "N/A";
     switch (level.toLowerCase()) {
+      case "very_ready":
+        return "Sangat Siap";
       case "ready":
         return "Siap";
+      case "somewhat_ready":
+        return "Agak Siap";
       case "not_ready":
         return "Belum Siap";
       case "needs_improvement":

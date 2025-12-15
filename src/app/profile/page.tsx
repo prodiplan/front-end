@@ -123,7 +123,7 @@ export default function ProfilePage() {
           };
         }
       })
-      .filter((a): a is Assessment => a !== null) || [];
+      .filter((a) => a !== null) as Assessment[] || [];
 
   const [formData, setFormData] = useState<ProfileData>({
     id: "",
@@ -369,9 +369,8 @@ export default function ProfilePage() {
           >
             {!isEditing ? (
               <div
-                className={`bg-white rounded-2xl shadow-md p-6 flex flex-col ${
-                  assessments.length === 0 ? "min-h-[520px]" : ""
-                }`}
+                className={`bg-white rounded-2xl shadow-md p-6 flex flex-col ${assessments.length === 0 ? "min-h-[520px]" : ""
+                  }`}
               >
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="text-lg font-bold text-gray-900 flex items-center space-x-2">
@@ -381,11 +380,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div
-                  className={`space-y-2 mb-4 flex flex-col ${
-                    assessments.length === 0
-                      ? "flex-1 items-center justify-center"
-                      : ""
-                  }`}
+                  className={`space-y-2 mb-4 flex flex-col ${assessments.length === 0
+                    ? "flex-1 items-center justify-center"
+                    : ""
+                    }`}
                 >
                   {assessments.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 px-4">

@@ -124,7 +124,7 @@ export function CTA() {
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-2">5min</div>
-              <div className="text-sm">Hasil Instan</div>
+              <div className="text-sm">Evaluasi Akurat</div>
             </div>
             <div className="text-center">
               <div className="text-3xl font-bold text-white mb-2">10K+</div>

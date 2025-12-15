@@ -40,6 +40,13 @@ export interface SocketError {
   session_id?: string;
 }
 
+export interface SocketGradingResult {
+  messageId: string;
+  score: number;
+  isComplete: boolean;
+  nextQuestion: string; // The content of the next question
+}
+
 /**
  * Create and configure Socket.IO connection
  */
@@ -128,6 +135,16 @@ export function onSessionCompleted(
  */
 export function onError(socket: Socket, callback: (data: SocketError) => void) {
   socket.on("error", callback);
+}
+
+/**
+ * Listen for grading results (AI analysis)
+ */
+export function onGradingResult(
+  socket: Socket,
+  callback: (data: SocketGradingResult) => void
+) {
+  socket.on("grading_result", callback);
 }
 
 /**

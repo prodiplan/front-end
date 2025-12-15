@@ -57,9 +57,9 @@ export function Features() {
     },
     {
       icon: ClockIcon,
-      title: "Hasil Instan dalam 5 Menit",
+      title: "Evaluasi Mendalam & Akurat",
       description:
-        "Dapatkan laporan komprehensif dan actionable feedback tanpa perlu menunggu lama.",
+        "Dapatkan analisis komprehensif dengan konfirmasi dari expert untuk hasil yang dapat diandalkan.",
       color: "primary",
     },
     {

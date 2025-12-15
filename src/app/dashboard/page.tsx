@@ -166,11 +166,11 @@ export default function DashboardPage() {
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircleIcon className="w-5 h-5 text-secondary-600" />
-                  <span>Hasil instan</span>
+                  <span>Evaluasi mendalam</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <CheckCircleIcon className="w-5 h-5 text-secondary-600" />
-                  <span>Bebas revisi</span>
+                  <span>Proses interaktif</span>
                 </div>
               </motion.div>
             </motion.div>

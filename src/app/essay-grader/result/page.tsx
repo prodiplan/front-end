@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -25,12 +25,12 @@ interface AnalysisResult {
     weaknesses: string;
     recommendations: string;
     summary: string;
-    key_insights: any;
+    key_insights: Record<string, string>;
     career_suggestions: string[];
   };
 }
 
-export default function ResultPage() {
+function ResultContent() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -105,8 +105,8 @@ export default function ResultPage() {
   const recommendations = parseToArray(result.analysis_report?.recommendations);
   const detailed_insights = result.analysis_report?.key_insights
     ? Object.entries(result.analysis_report.key_insights).map(
-        ([k, v]) => `${k.replace(/_/g, " ")}: ${v}`
-      )
+      ([k, v]) => `${k.replace(/_/g, " ")}: ${v}`
+    )
     : [];
 
   // Map readiness_level to display labels
@@ -488,5 +488,22 @@ export default function ResultPage() {
         </motion.div>
       </div>
     </div>
+  );
+}
+
+export default function ResultPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4 animate-pulse">
+            <SparklesIcon className="w-8 h-8 text-primary-600" />
+          </div>
+          <p className="text-neutral-600">Memuat hasil...</p>
+        </div>
+      </div>
+    }>
+      <ResultContent />
+    </Suspense>
   );
 }

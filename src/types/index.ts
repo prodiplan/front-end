@@ -32,6 +32,10 @@ export interface GradingSession {
     content: string;
     created_at: string;
   };
+  questions?: {
+    id: string;
+    content: string;
+  }[];
 }
 
 export interface SessionMessage {

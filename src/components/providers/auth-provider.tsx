@@ -19,7 +19,7 @@ import type {
   DeleteUserRequest,
 } from "@/lib/services/auth";
 
-interface User {
+export interface User {
   id: string;
   email: string;
   full_name: string;

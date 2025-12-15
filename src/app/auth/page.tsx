@@ -245,7 +245,7 @@ export default function AuthPage() {
                   </svg>
                 </div>
                 <span className="text-white text-opacity-90">
-                  Hasil instan dalam hitungan menit
+                  Evaluasi mendalam dan akurat
                 </span>
               </div>
               <div className="flex items-center space-x-3">
