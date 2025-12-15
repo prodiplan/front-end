@@ -50,26 +50,86 @@ export default function ResultDetailPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-          className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full"
-        >
-          <SparklesIcon className="w-8 h-8 text-primary-600" />
-        </motion.div>
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4"
+          >
+            <SparklesIcon className="w-8 h-8 text-primary-600" />
+          </motion.div>
+          <p className="text-neutral-800 font-medium text-lg mb-2">
+            Memuat hasil grading Anda...
+          </p>
+          <p className="text-neutral-600 text-sm animate-pulse">
+            Mohon tunggu sebentar
+          </p>
+        </div>
       </div>
     );
   }
 
   if (!session || !resultData) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-neutral-600 mb-6">Hasil tidak ditemukan</p>
-          <Link href="/profile" className="btn btn-primary">
-            Kembali ke Profil
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 via-white to-primary-50">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center max-w-md mx-auto px-6"
+        >
+          {/* Animated Icon */}
+          <motion.div
+            animate={{
+              scale: [1, 1.1, 1],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+            className="inline-flex items-center justify-center w-20 h-20 bg-primary-100 rounded-full mb-6"
+          >
+            <SparklesIcon className="w-10 h-10 text-primary-600" />
+          </motion.div>
+
+          {/* Title */}
+          <h1 className="text-2xl font-bold text-neutral-900 mb-3">
+            Grading Sedang Diproses
+          </h1>
+
+          {/* Description */}
+          <p className="text-neutral-600 mb-2 leading-relaxed">
+            AI kami sedang menganalisis jawaban Anda secara mendalam untuk memberikan hasil terbaik.
+          </p>
+          <p className="text-neutral-500 text-sm mb-8">
+            Proses ini biasanya memakan waktu beberapa detik. Silakan kembali ke profil dan cek kembali sebentar lagi.
+          </p>
+
+          {/* Loading Progress */}
+          <div className="mb-8">
+            <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+              <motion.div
+                animate={{
+                  x: ["-100%", "100%"]
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+                className="h-full w-1/3 bg-gradient-to-r from-primary-400 to-primary-600"
+              />
+            </div>
+          </div>
+
+          {/* Action Button */}
+          <Link href="/profile" className="btn btn-primary btn-lg inline-flex items-center space-x-2">
+            <ArrowLeftIcon className="w-5 h-5" />
+            <span>Kembali ke Profil</span>
           </Link>
-        </div>
+        </motion.div>
       </div>
     );
   }
@@ -125,6 +185,15 @@ export default function ResultDetailPage() {
     }
   };
 
+  // Map score to category (based on score range, not backend readiness_level)
+  const getScoreCategory = (score: number) => {
+    if (score >= 90) return { label: "Sangat Siap", color: "text-green-700", bg: "bg-green-50", border: "border-green-200" };
+    if (score >= 80) return { label: "Siap", color: "text-green-600", bg: "bg-green-50", border: "border-green-200" };
+    if (score >= 70) return { label: "Cukup Siap", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-200" };
+    if (score >= 60) return { label: "Perlu Persiapan", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
+    return { label: "Belum Siap", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
+  };
+
   const getReadinessColor = (level: string) => {
     switch (level) {
       case "ready":
@@ -159,7 +228,7 @@ export default function ResultDetailPage() {
   };
 
   const colors = getReadinessColor(result.readiness_level);
-  const readinessLabel = getReadinessLabel(result.readiness_level);
+  const scoreCategory = getScoreCategory(result.final_score);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-neutral-50 via-white to-primary-50">
@@ -227,15 +296,12 @@ export default function ResultDetailPage() {
                 <h1 className="text-5xl lg:text-6xl font-bold mb-4">
                   {result.final_score}
                 </h1>
-                <motion.p
-                  className="text-2xl font-semibold flex items-center space-x-2"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.6, delay: 0.3 }}
-                >
-                  <CheckCircleIcon className="w-8 h-8" />
-                  <span>{readinessLabel}</span>
-                </motion.p>
+                <div className={`inline-flex items-center space-x-2 ${scoreCategory.bg} ${scoreCategory.border} border px-4 py-2 rounded-full`}>
+                  <CheckCircleIcon className={`w-5 h-5 ${scoreCategory.color}`} />
+                  <span className={`text-sm font-semibold ${scoreCategory.color}`}>
+                    {scoreCategory.label}
+                  </span>
+                </div>
               </div>
 
               {/* Right Side - Insights */}

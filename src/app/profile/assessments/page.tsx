@@ -164,33 +164,24 @@ export default function AssessmentsPage() {
     (a) => a.status === "not_completed"
   );
 
-  // Helper function to format readiness level
-  const formatReadinessLevel = (level?: string) => {
-    if (!level) return "N/A";
-    switch (level.toLowerCase()) {
-      case "very_ready":
-        return "Sangat Siap";
-      case "ready":
-        return "Siap";
-      case "somewhat_ready":
-        return "Agak Siap";
-      case "not_ready":
-        return "Belum Siap";
-      case "needs_improvement":
-        return "Perlu Peningkatan";
-      default:
-        return level;
-    }
+  // Map score to category (based on score range, not backend readiness_level)
+  const getScoreCategory = (score?: number) => {
+    if (!score) return { label: "N/A", color: "text-gray-600" };
+    if (score >= 90) return { label: "Sangat Siap", color: "text-green-700" };
+    if (score >= 80) return { label: "Siap", color: "text-green-600" };
+    if (score >= 70) return { label: "Cukup Siap", color: "text-blue-600" };
+    if (score >= 60) return { label: "Perlu Persiapan", color: "text-yellow-600" };
+    return { label: "Belum Siap", color: "text-red-600" };
   };
 
   const avgScore =
     completedAssessments.length > 0
       ? Math.round(
-          completedAssessments.reduce(
-            (sum, a) => sum + (a.final_score || 0),
-            0
-          ) / completedAssessments.length
-        )
+        completedAssessments.reduce(
+          (sum, a) => sum + (a.final_score || 0),
+          0
+        ) / completedAssessments.length
+      )
       : 0;
 
   const highestScore =
@@ -490,8 +481,8 @@ export default function AssessmentsPage() {
                             <div className="text-3xl font-bold text-green-600">
                               {assessment.final_score}
                             </div>
-                            <p className="text-sm text-green-700 font-medium">
-                              {formatReadinessLevel(assessment.readiness_level)}
+                            <p className={`text-sm font-medium ${getScoreCategory(assessment.final_score).color}`}>
+                              {getScoreCategory(assessment.final_score).label}
                             </p>
                           </div>
                         </div>

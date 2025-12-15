@@ -41,6 +41,8 @@ export function useGradingSession(sessionId?: string) {
       return response.data;
     },
     enabled: !!token && !!sessionId,
+    retry: 2, // Retry up to 2 times if data is not ready
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 5000), // Exponential backoff: 1s, 2s
   });
 }
 
@@ -146,6 +148,14 @@ export function useGradingResult(sessionId?: string) {
       return response.data;
     },
     enabled: !!token && !!sessionId,
+    retry: 3, // Retry up to 3 times if data is not ready
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff: 1s, 2s, 4s
+    refetchInterval: (data) => {
+      // Keep refetching every 2 seconds if data is not available yet
+      return data ? false : 2000;
+    },
+    refetchOnMount: true,
+    staleTime: 0,
   });
 }
 

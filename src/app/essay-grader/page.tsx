@@ -203,7 +203,7 @@ function EssayGraderContent() {
       });
 
       // Listen for grading results (New Flow)
-      onGradingResult(socket, (data: any) => {
+      onGradingResult(socket, async (data: any) => {
         console.log("🤖 Grading result received:", data);
 
         // Normalize data keys (handle potential case variants)
@@ -219,6 +219,9 @@ function EssayGraderContent() {
         // Handle Completion
         if (isComplete) {
           console.log("🎉 Session completed via grading_result");
+          setCurrentStep("loading");
+          // Wait for backend to finish processing final result
+          await new Promise((resolve) => setTimeout(resolve, 5000));
           router.push(`/profile/result/${sessionId}`);
           return;
         }
@@ -281,8 +284,11 @@ function EssayGraderContent() {
       });
 
       // Listen for session completion (Legacy support/Direct event)
-      onSessionCompleted(socket, (data) => {
+      onSessionCompleted(socket, async (data) => {
         console.log("🎉 Session completed:", data);
+        setCurrentStep("loading");
+        // Wait for backend to finish processing final result
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         router.push(`/profile/result/${data.session_id}`);
       });
 
@@ -315,9 +321,6 @@ function EssayGraderContent() {
     }
     prevQuestionsLength.current = questions.length;
   }, [questions, isWaitingForQuestion]);
-
-  // Polling fallback: if no questions after 5 seconds, try to fetch again
-
 
   const handleAnswer = (value: string) => {
     const currentQuestion = questions[currentQuestionIndex];
@@ -352,8 +355,8 @@ function EssayGraderContent() {
       return;
     }
 
-    // Send answer via HTTP API using gradingService
-    // Response will contain: message, score, next_question, session_completed
+    // Send answer via HTTP API
+    // The next question will be received via WebSocket
     try {
       setIsWaitingForQuestion(true);
 
@@ -366,6 +369,7 @@ function EssayGraderContent() {
       });
 
       console.log("✅ Answer sent successfully:", response);
+      console.log("⏳ Waiting for next question via WebSocket...");
 
       // Update score if provided
       if (response.data.score !== undefined) {
@@ -376,43 +380,14 @@ function EssayGraderContent() {
       if (response.data.session_completed) {
         console.log("🎉 Session completed automatically!");
         setCurrentStep("loading");
-        // Wait a bit for backend processing
-        await new Promise((resolve) => setTimeout(resolve, 1500));
+        // Wait for backend to finish processing final result
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         router.push(`/profile/result/${sessionId}`);
         return;
       }
 
-      // Check if next_question is provided in response
-      if (response.data.next_question) {
-        console.log(
-          "📝 Next question received in response:",
-          response.data.next_question
-        );
-        // Add new question to the list
-        setQuestions((prev) => [
-          ...prev,
-          {
-            id: response.data.next_question!.id,
-            question: response.data.next_question!.content,
-            placeholder: "Tuliskan jawaban Anda dengan detail...",
-            tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
-          },
-        ]);
-        // Move to the new question
-        setCurrentQuestionIndex(questions.length); // questions.length is the index of new question
-        setIsWaitingForQuestion(false);
-      } else {
-        // No next_question in response, wait for WebSocket or poll
-        console.log(
-          "⏳ No next_question in response, waiting for WebSocket..."
-        );
-        // Move to next question if available locally
-        if (currentQuestionIndex < questions.length - 1) {
-          setCurrentQuestionIndex(currentQuestionIndex + 1);
-          setIsWaitingForQuestion(false);
-        }
-        // Otherwise keep waiting
-      }
+      // Note: We now rely entirely on WebSocket for next question
+      // No polling, just waiting for WebSocket events
     } catch (error) {
       console.error("❌ Error sending answer:", error);
       alert(
@@ -422,73 +397,26 @@ function EssayGraderContent() {
     }
   };
 
-  // Aggressive auto-recovery: check API every 2s while waiting for question
+  // Simple timeout warning if WebSocket takes too long (15 seconds)
+  // This doesn't poll the API, just logs a warning
   useEffect(() => {
-    let initialTimeout: NodeJS.Timeout;
-    let intervalId: NodeJS.Timeout;
+    let timeoutId: NodeJS.Timeout;
 
-    if (isWaitingForQuestion && sessionId && token) {
-      console.log("🔄 Starting aggressive auto-check for new questions...");
+    if (isWaitingForQuestion && sessionId) {
+      console.log("⏳ Waiting for next question via WebSocket...");
 
-      let checkCount = 0;
-
-      const checkForNewQuestions = async () => {
-        checkCount++;
-        console.log(`⚡ Auto-checking for new questions (attempt ${checkCount})...`);
-        try {
-          const result = await gradingService.getMessages(
-            sessionId,
-            { limit: 50 },
-            token
-          );
-
-          const questionMessages = result.data?.messages?.filter((m) => m.message_type === "question") || [];
-
-          if (questionMessages.length > questions.length) {
-            console.log("✅ Auto-recovered new question!", questionMessages.length);
-            const mappedQuestions = questionMessages.map((q) => ({
-              id: q.id,
-              question: q.content,
-              placeholder: "Tuliskan jawaban Anda dengan detail...",
-              tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
-            }));
-            setQuestions(mappedQuestions);
-            // Effect watching questions.length will handle index update and stop waiting
-          } else if (checkCount >= 3) {
-            // After 3 attempts with no new questions, check if session is completed
-            console.log("⏳ No new questions after 3 attempts, checking session status...");
-            try {
-              const sessionResponse = await gradingService.getSession(sessionId, token);
-              const session = sessionResponse.data;
-
-              if (session.status === "completed") {
-                console.log("🎉 Session is completed, redirecting to results...");
-                router.push(`/profile/result/${sessionId}`);
-              } else {
-                console.log("⏳ Session still active, continuing to wait...");
-              }
-            } catch (error) {
-              console.error("❌ Failed to check session status:", error);
-            }
-          }
-        } catch (e) {
-          console.error("❌ Auto-check failed:", e);
-        }
-      };
-
-      // Check immediately after 1 second, then every 2 seconds
-      initialTimeout = setTimeout(checkForNewQuestions, 1000);
-      intervalId = setInterval(checkForNewQuestions, 2000);
+      timeoutId = setTimeout(() => {
+        console.warn(
+          "⚠️ Question taking longer than expected. Check WebSocket connection or backend processing."
+        );
+        // You could optionally show a UI message to the user here
+      }, 15000); // 15 seconds
     }
 
     return () => {
-      if (initialTimeout) clearTimeout(initialTimeout);
-      if (intervalId) {
-        clearInterval(intervalId);
-        console.log("🛑 Stopped auto-check (question received or unmounted)");
-      }
+      if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [isWaitingForQuestion, sessionId, token, questions.length, router]);
+  }, [isWaitingForQuestion, sessionId]);
 
   const handlePrevious = () => {
     if (currentQuestionIndex > 0) {
@@ -803,7 +731,8 @@ function EssayGraderContent() {
         // Check if session was auto-completed after last answer
         if (messageResponse.data.session_completed) {
           console.log("🎉 Session auto-completed after last answer");
-          await new Promise((resolve) => setTimeout(resolve, 1500));
+          // Wait for backend to finish processing final result
+          await new Promise((resolve) => setTimeout(resolve, 3000));
           router.push(`/profile/result/${sessionId}`);
           return;
         }
@@ -815,8 +744,8 @@ function EssayGraderContent() {
       });
       console.log("✅ Session completed manually:", completeResponse);
 
-      // Wait a bit for backend to finish processing final analysis
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Wait for backend to finish processing final analysis
+      await new Promise((resolve) => setTimeout(resolve, 5000));
 
       // Navigate to result page
       router.push(`/profile/result/${sessionId}`);
@@ -1439,15 +1368,6 @@ function TestScreen({
                 title={socketConnected ? "Connected" : "Disconnected"}
               />
 
-              {/* Score Display */}
-              {currentScore > 0 && (
-                <div className="flex items-center space-x-1 px-2 py-1 bg-green-50 rounded-lg">
-                  <span className="text-xs font-semibold text-green-700">
-                    Score: {currentScore}
-                  </span>
-                </div>
-              )}
-
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
@@ -1685,13 +1605,6 @@ function TestScreen({
                       className="h-full bg-green-500"
                     />
                   </div>
-                  {currentScore > 0 && (
-                    <p className="text-xs text-neutral-600">
-                      <span className="font-medium text-green-700">
-                        Score saat ini: {currentScore}
-                      </span>
-                    </p>
-                  )}
                   {isWaitingForQuestion && (
                     <div className="mt-2">
                       <p className="text-xs text-blue-600 flex items-center gap-1 mb-1">
