@@ -103,7 +103,7 @@ export function HowItWorks() {
             variants={itemVariants}
             className="text-lg text-neutral-600 max-w-3xl mx-auto leading-relaxed"
           >
-            Dari pendaftaran hingga hasil analisis—semuanya dirancang untuk
+            Dari pendaftaran hingga hasil analisis semuanya dirancang untuk
             membuat proses memilih jurusan semudah dan secepat mungkin.
           </motion.p>
         </motion.div>

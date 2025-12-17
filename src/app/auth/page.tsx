@@ -176,7 +176,7 @@ export default function AuthPage() {
 
             <div className="mb-4">
               <SplitText
-                text="Temukan Jurusan Kuliah Terbaik untuk Masa Depanmu"
+                text="Uji Jurusan Kuliah untuk Masa Depanmu"
                 className="text-4xl font-bold text-white leading-tight"
                 tag="h2"
                 delay={100}

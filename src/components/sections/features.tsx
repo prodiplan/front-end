@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import {
   SparklesIcon,
-  AcademicCapIcon,
+  BookmarkIcon,
   ChartBarIcon,
   ShieldCheckIcon,
   ClockIcon,
@@ -35,10 +35,10 @@ export function Features() {
       color: "primary",
     },
     {
-      icon: AcademicCapIcon,
-      title: "Rekomendasi Jurusan",
+      icon: BookmarkIcon,
+      title: "Rekomendasi Buku",
       description:
-        "Dapatkan 3-5 rekomendasi jurusan yang dipersonalisasi berdasarkan profil akademik dan minat karir unik Anda.",
+        "Dapatkan rekomendasi buku yang dipersonalisasi lengkap dengan judul dan penulis berdasarkan minat dan profil akademik Anda.",
       color: "secondary",
     },
     {
@@ -137,18 +137,16 @@ export function Features() {
               className="card card-hover p-8 h-full border border-neutral-200"
             >
               <div
-                className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 ${
-                  feature.color === "primary"
-                    ? "bg-primary-100"
-                    : "bg-secondary-100"
-                }`}
+                className={`inline-flex items-center justify-center w-16 h-16 rounded-full mb-6 ${feature.color === "primary"
+                  ? "bg-primary-100"
+                  : "bg-secondary-100"
+                  }`}
               >
                 <feature.icon
-                  className={`w-8 h-8 ${
-                    feature.color === "primary"
-                      ? "text-primary-600"
-                      : "text-secondary-600"
-                  }`}
+                  className={`w-8 h-8 ${feature.color === "primary"
+                    ? "text-primary-600"
+                    : "text-secondary-600"
+                    }`}
                 />
               </div>
               <h3 className="text-xl font-semibold text-neutral-900 mb-4">
@@ -171,7 +169,7 @@ export function Features() {
         >
           <div className="bg-primary-600 rounded-2xl p-12 text-white">
             <h3 className="text-2xl md:text-3xl font-bold mb-4">
-              Siap Mencari Jurusan Impianmu?
+              Siap Menguji Jurusan Impianmu?
             </h3>
             <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
               Bergabunglah dengan ribuan siswa yang telah menemukan jurusan

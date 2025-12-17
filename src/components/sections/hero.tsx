@@ -104,7 +104,7 @@ export function Hero() {
           {/* Main Headline - Clear Value Proposition */}
           <div className="mb-6">
             <SplitText
-              text="Temukan Jurusan Kuliah yang Tepat untuk Anda dalam 5 Menit"
+              text="Uji Kesiapan Jurusan Kuliah Anda"
               className="text-4xl md:text-6xl lg:text-7xl font-bold text-neutral-900 leading-tight"
               tag="h1"
               delay={100}

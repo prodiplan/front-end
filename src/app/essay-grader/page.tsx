@@ -9,6 +9,7 @@ import {
   SparklesIcon,
   ExclamationTriangleIcon,
   ChevronDownIcon,
+  MicrophoneIcon,
 } from "@heroicons/react/24/outline";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { MAJORS } from "@/data/schoolsAndMajors";
@@ -65,6 +66,7 @@ function EssayGraderContent() {
   const [selectedMajor, setSelectedMajor] = useState<string>(
     user?.dream_major || ""
   );
+  const [showFunFactAnimation, setShowFunFactAnimation] = useState(false);
 
   const createSessionMutation = useCreateSession();
   const completeSessionMutation = useCompleteSession();
@@ -317,6 +319,7 @@ function EssayGraderContent() {
         console.log("📝 New question arrived, advancing index to:", questions.length - 1);
         setCurrentQuestionIndex(questions.length - 1);
         setIsWaitingForQuestion(false);
+        setShowFunFactAnimation(false); // Hide fun fact animation
       }
     }
     prevQuestionsLength.current = questions.length;
@@ -359,6 +362,7 @@ function EssayGraderContent() {
     // The next question will be received via WebSocket
     try {
       setIsWaitingForQuestion(true);
+      setShowFunFactAnimation(true); // Show fun fact animation
 
       const response = await sendMessageMutation.mutateAsync({
         sessionId,
@@ -379,6 +383,7 @@ function EssayGraderContent() {
       // Check if session is completed (max_questions reached or threshold reached)
       if (response.data.session_completed) {
         console.log("🎉 Session completed automatically!");
+        setShowFunFactAnimation(false);
         setCurrentStep("loading");
         // Wait for backend to finish processing final result
         await new Promise((resolve) => setTimeout(resolve, 3000));
@@ -394,6 +399,7 @@ function EssayGraderContent() {
         `Error: ${error instanceof Error ? error.message : "Unknown error"}`
       );
       setIsWaitingForQuestion(false);
+      setShowFunFactAnimation(false);
     }
   };
 
@@ -819,6 +825,7 @@ function EssayGraderContent() {
           sessionId={sessionId}
           token={token}
           setQuestions={setQuestions}
+          showFunFactAnimation={showFunFactAnimation}
         />
       )}
 
@@ -1263,6 +1270,7 @@ function TestScreen({
   sessionId,
   token,
   setQuestions,
+  showFunFactAnimation,
 }: {
   question: Question | undefined;
   currentQuestionIndex: number;
@@ -1285,6 +1293,7 @@ function TestScreen({
   sessionId: string | null;
   token: string | null;
   setQuestions: (questions: Question[]) => void;
+  showFunFactAnimation: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const progress =
@@ -1293,6 +1302,137 @@ function TestScreen({
       : 0;
   const isLastQuestion =
     totalQuestions > 0 && currentQuestionIndex === totalQuestions - 1;
+
+  // Speech-to-text states
+  const [isRecording, setIsRecording] = useState(false);
+  const [isBrowserSupported, setIsBrowserSupported] = useState(false);
+  const recognitionRef = useRef<any>(null);
+  const baseTextRef = useRef<string>(''); // Text before starting recording
+  const finalTranscriptRef = useRef<string>(''); // Accumulated final transcripts
+  const isRecordingRef = useRef<boolean>(false); // Track recording state for auto-restart
+  const onAnswerRef = useRef(onAnswer); // Store onAnswer in ref to avoid re-creating recognition
+
+  // Update onAnswerRef when onAnswer changes
+  useEffect(() => {
+    onAnswerRef.current = onAnswer;
+  }, [onAnswer]);
+
+  // Check browser support for speech recognition
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      setIsBrowserSupported(!!SpeechRecognition);
+    }
+  }, []);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if (!isBrowserSupported) return;
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const recognition = new SpeechRecognition();
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'id-ID'; // Indonesian language
+
+    recognition.onresult = (event: any) => {
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      // Process all results
+      for (let i = 0; i < event.results.length; i++) {
+        const transcript = event.results[i][0].transcript;
+        if (event.results[i].isFinal) {
+          finalTranscript += transcript + ' ';
+        } else {
+          interimTranscript += transcript;
+        }
+      }
+
+      // Update final transcript accumulator
+      if (finalTranscript) {
+        finalTranscriptRef.current += finalTranscript;
+      }
+
+      // Real-time update: base text + all final transcripts + current interim
+      const currentText = baseTextRef.current + finalTranscriptRef.current + interimTranscript;
+      // Use ref to call onAnswer without triggering re-creation of recognition
+      onAnswerRef.current(currentText);
+    };
+
+    recognition.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error);
+
+      // Don't auto-restart on these errors
+      if (event.error === 'not-allowed' || event.error === 'no-speech') {
+        isRecordingRef.current = false;
+        setIsRecording(false);
+      }
+
+      if (event.error === 'not-allowed') {
+        alert('Izin mikrofon ditolak. Silakan izinkan akses mikrofon di browser Anda.');
+      }
+    };
+
+    recognition.onend = () => {
+      // Auto-restart if user is still in recording mode
+      if (isRecordingRef.current) {
+        console.log('🔄 Auto-restarting speech recognition...');
+        try {
+          recognition.start();
+        } catch (error) {
+          console.error('Failed to restart recognition:', error);
+          isRecordingRef.current = false;
+          setIsRecording(false);
+          finalTranscriptRef.current = '';
+        }
+      } else {
+        setIsRecording(false);
+        finalTranscriptRef.current = '';
+      }
+    };
+
+    recognitionRef.current = recognition;
+
+    return () => {
+      if (recognitionRef.current) {
+        isRecordingRef.current = false;
+        try {
+          recognitionRef.current.stop();
+        } catch (error) {
+          // Ignore errors on cleanup
+        }
+      }
+    };
+  }, [isBrowserSupported]); // Removed onAnswer from dependencies!
+
+  // Toggle recording
+  const toggleRecording = () => {
+    if (!recognitionRef.current) return;
+
+    if (isRecording) {
+      // User intentionally stopping
+      isRecordingRef.current = false;
+      recognitionRef.current.stop();
+      setIsRecording(false);
+      finalTranscriptRef.current = '';
+    } else {
+      // Save current text as base when starting recording
+      baseTextRef.current = answer;
+      finalTranscriptRef.current = '';
+      isRecordingRef.current = true;
+      setIsRecording(true);
+
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        console.error('Failed to start recognition:', error);
+        isRecordingRef.current = false;
+        setIsRecording(false);
+      }
+    }
+  };
 
   // Focus textarea when question changes
   useEffect(() => {
@@ -1428,9 +1568,51 @@ function TestScreen({
 
                     {/* Text Area */}
                     <div className="mb-2 flex flex-col min-h-0 flex-1">
-                      <label className="block text-xs font-medium text-neutral-700 mb-2 flex-shrink-0">
-                        Jawaban Anda
-                      </label>
+                      <div className="flex items-center justify-between mb-2 flex-shrink-0">
+                        <label className="block text-xs font-medium text-neutral-700">
+                          Jawaban Anda
+                        </label>
+                        {isBrowserSupported && (
+                          <motion.button
+                            type="button"
+                            onClick={toggleRecording}
+                            disabled={isWaitingForQuestion || currentQuestionIndex < questions.length - 1}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${isRecording
+                              ? 'bg-red-500 text-white shadow-lg'
+                              : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                              }`}
+                            title={isRecording ? 'Klik untuk berhenti merekam' : 'Klik untuk mulai berbicara'}
+                          >
+                            {isRecording ? (
+                              // Stop icon when recording
+                              <motion.svg
+                                className="w-4 h-4"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 1, repeat: Infinity }}
+                              >
+                                <rect x="6" y="6" width="8" height="8" rx="1" />
+                              </motion.svg>
+                            ) : (
+                              // Microphone icon
+                              <MicrophoneIcon className="w-4 h-4" />
+                            )}
+                            <span>
+                              {isRecording ? 'Berhenti' : 'Rekam'}
+                            </span>
+                            {isRecording && (
+                              <motion.span
+                                className="w-2 h-2 bg-white rounded-full"
+                                animate={{ opacity: [1, 0.3, 1] }}
+                                transition={{ duration: 1.5, repeat: Infinity }}
+                              />
+                            )}
+                          </motion.button>
+                        )}
+                      </div>
                       <textarea
                         ref={textareaRef}
                         value={answer}
@@ -1441,9 +1623,26 @@ function TestScreen({
                         style={{ minHeight: "150px" }}
                         rows={6}
                       />
-                      <p className="text-xs text-neutral-500 mt-1 flex-shrink-0">
-                        {answer.length} karakter
-                      </p>
+                      <div className="flex items-center justify-between mt-1 flex-shrink-0">
+                        <p className="text-xs text-neutral-500">
+                          {answer.length} karakter
+                        </p>
+                        {isRecording && (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-xs text-red-600 flex items-center gap-1"
+                          >
+                            <motion.span
+                              animate={{ opacity: [1, 0.3, 1] }}
+                              transition={{ duration: 1, repeat: Infinity }}
+                            >
+                              🎤
+                            </motion.span>
+                            Sedang merekam...
+                          </motion.p>
+                        )}
+                      </div>
                     </div>
 
                     {/* Character count indicator */}
@@ -1763,6 +1962,11 @@ function TestScreen({
           )}
         </div>
       </div>
+
+      {/* Fun Fact Animation Overlay */}
+      <AnimatePresence>
+        {showFunFactAnimation && <FunFactAnimation />}
+      </AnimatePresence>
     </div>
   );
 }
@@ -1816,3 +2020,128 @@ function LoadingScreen() {
     </div>
   );
 }
+
+function FunFactAnimation() {
+  const [currentFactIndex, setCurrentFactIndex] = useState(0);
+
+  const funFacts = [
+    "💡 Rata-rata mahasiswa menghabiskan 15-20 jam per minggu untuk belajar mandiri!",
+    "🎓 Lebih dari 80% mahasiswa sukses adalah mereka yang aktif bertanya di kelas.",
+    "📚 Kuliah bukan hanya tentang nilai, tapi juga tentang networking dan pengalaman!",
+    "✨ Mahasiswa yang terlibat organisasi cenderung lebih siap menghadapi dunia kerja.",
+    "🌟 Passion dan ketertarikan adalah kunci kesuksesan dalam menjalani perkuliahan.",
+    "🎯 Memilih jurusan yang tepat dapat meningkatkan kepuasan hidup hingga 40%!",
+    "🚀 Alumni dengan pengalaman organisasi 70% lebih cepat mendapat pekerjaan.",
+    "💪 Kesiapan mental sama pentingnya dengan kemampuan akademik!",
+    "🎨 Kreativitas dan critical thinking adalah skill paling dicari di era digital.",
+    "🌈 Setiap jurusan memiliki keunikan dan peluang karir yang luas!",
+  ];
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentFactIndex((prev) => (prev + 1) % funFacts.length);
+    }, 3000); // Change fact every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [funFacts.length]);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.9, opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full"
+      >
+        {/* Animated Icon */}
+        <div className="flex justify-center mb-6">
+          <motion.div
+            animate={{
+              rotate: [0, 360],
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 2,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+            className="w-20 h-20 bg-gradient-to-br from-primary-400 to-primary-600 rounded-full flex items-center justify-center shadow-lg"
+          >
+            <SparklesIcon className="w-10 h-10 text-white" />
+          </motion.div>
+        </div>
+
+        {/* Title */}
+        <motion.h3
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="text-2xl font-bold text-center text-gray-900 mb-2"
+        >
+          Sedang Memproses...
+        </motion.h3>
+
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-center text-gray-600 mb-6 text-sm"
+        >
+          AI sedang menganalisis jawaban Anda
+        </motion.p>
+
+        {/* Fun Fact Card */}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={currentFactIndex}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.4 }}
+            className="bg-gradient-to-br from-primary-50 to-secondary-50 rounded-xl p-6 border-2 border-primary-200"
+          >
+            <p className="text-sm font-medium text-gray-800 text-center leading-relaxed">
+              {funFacts[currentFactIndex]}
+            </p>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Loading Dots */}
+        <div className="flex justify-center items-center gap-2 mt-6">
+          {[0, 1, 2].map((i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -10, 0],
+                backgroundColor: ["#3b82f6", "#8b5cf6", "#3b82f6"],
+              }}
+              transition={{
+                duration: 1.2,
+                repeat: Infinity,
+                delay: i * 0.15,
+              }}
+              className="w-3 h-3 rounded-full"
+            />
+          ))}
+        </div>
+
+        {/* Progress Indicator */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          className="text-center text-xs text-gray-500 mt-4"
+        >
+          Tunggu sebentar ya...
+        </motion.p>
+      </motion.div>
+    </motion.div>
+  );
+}
+

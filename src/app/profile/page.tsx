@@ -79,6 +79,9 @@ export default function ProfilePage() {
           (r) => r.session_id === session.id
         );
 
+        // Check if session has expired (client-side check)
+        const isExpired = session.expires_at && new Date(session.expires_at) < new Date();
+
         if (hasResult && result) {
           // Completed - has been analyzed by AI
           return {
@@ -93,8 +96,8 @@ export default function ProfilePage() {
             question_count: session.question_count,
             max_questions: session.max_questions,
           };
-        } else if (session.status === "active") {
-          // In Progress - session is still active and can be continued
+        } else if (session.status === "active" && !isExpired) {
+          // In Progress - session is still active and has not expired
           return {
             id: session.id,
             session_id: session.id,
@@ -107,8 +110,22 @@ export default function ProfilePage() {
             question_count: session.question_count,
             max_questions: session.max_questions,
           };
+        } else if (session.status === "expired" || session.status === "completed" || isExpired) {
+          // Not completed - session expired (by status or time), or completed but no result available yet
+          return {
+            id: session.id,
+            session_id: session.id,
+            target_major: session.target_major,
+            status: "not_completed" as const,
+            final_score: session.current_score,
+            readiness_level: "Tidak Selesai",
+            created_at: session.created_at,
+            completed_at: undefined,
+            question_count: session.question_count,
+            max_questions: session.max_questions,
+          };
         } else {
-          // Not completed - session expired or cannot be continued
+          // Fallback for any other status
           return {
             id: session.id,
             session_id: session.id,

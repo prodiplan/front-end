@@ -139,11 +139,30 @@ export default function ResultDetailPage() {
   const parseToArray = (value: string | string[]): string[] => {
     if (Array.isArray(value)) return value;
     if (typeof value === "string") {
-      // Split by common delimiters or return as single item
-      return value
-        .split(/[,;\n]/)
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
+      // First check if there are bullet points or numbered lists
+      if (value.includes('\n- ') || value.includes('\n• ') || /\n\d+\.\s/.test(value)) {
+        // Split by bullet points or numbered items
+        return value
+          .split(/\n[-•]|\n\d+\.\s/)
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      }
+      // Check for newline separated items (paragraphs)
+      if (value.includes('\n\n')) {
+        return value
+          .split('\n\n')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      }
+      // Check for single newlines
+      if (value.includes('\n')) {
+        return value
+          .split('\n')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0);
+      }
+      // If no clear delimiters, return as single item
+      return value.trim().length > 0 ? [value.trim()] : [];
     }
     return [];
   };
@@ -409,7 +428,7 @@ function OverviewTab({
           <StarIcon className="w-6 h-6 text-yellow-500" />
           <span>Kekuatan Anda</span>
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {result.analysis_report.strengths.map((strength, index) => (
             <motion.div
               key={index}
@@ -431,7 +450,7 @@ function OverviewTab({
           <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
           <span>Area Pengembangan</span>
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {result.analysis_report.weaknesses.map((weakness, index) => (
             <motion.div
               key={index}
