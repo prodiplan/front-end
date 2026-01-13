@@ -67,6 +67,7 @@ function EssayGraderContent() {
     user?.dream_major || ""
   );
   const [showFunFactAnimation, setShowFunFactAnimation] = useState(false);
+  const [isCheckingActiveSessions, setIsCheckingActiveSessions] = useState(true);
 
   const createSessionMutation = useCreateSession();
   const completeSessionMutation = useCompleteSession();
@@ -87,18 +88,46 @@ function EssayGraderContent() {
 
   // Check for active session on mount
   useEffect(() => {
-    if (sessionsData?.sessions && sessionsData.sessions.length > 0) {
-      // Find first active session that hasn't expired
-      const activeSessionFound = sessionsData.sessions.find((session) => {
-        const isExpired = new Date(session.expires_at) < new Date();
-        return session.status === "active" && !isExpired;
-      });
+    const checkActiveSessions = async () => {
+      setIsCheckingActiveSessions(true);
+      if (sessionsData?.sessions && sessionsData.sessions.length > 0 && token) {
+        // Find first active session that hasn't expired and doesn't have results
+        for (const session of sessionsData.sessions) {
+          const isExpired = new Date(session.expires_at) < new Date();
 
-      if (activeSessionFound) {
-        setActiveSession(activeSessionFound);
+          // Skip if not active or expired
+          if (session.status !== "active" || isExpired) {
+            continue;
+          }
+
+          // Check if this session has a grading result
+          try {
+            const resultResponse = await gradingService.getResult(session.id, token);
+
+            // If we successfully get a result, this session is actually complete
+            // so we should NOT show it as an active incomplete session
+            if (resultResponse.data) {
+              console.log("📊 Session", session.id, "has result, skipping as active session");
+              continue;
+            }
+          } catch (error) {
+            // If we get an error (likely 404), it means no result exists yet
+            // This is a truly incomplete active session
+            console.log("⚠️ Session", session.id, "has no result, marking as active");
+            setActiveSession(session);
+            setIsCheckingActiveSessions(false);
+            return; // Found an active incomplete session, stop searching
+          }
+        }
+
+        // If we reach here, no active incomplete sessions found
+        setActiveSession(null);
       }
-    }
-  }, [sessionsData]);
+      setIsCheckingActiveSessions(false);
+    };
+
+    checkActiveSessions();
+  }, [sessionsData, token]);
 
   // Initialize selectedMajor with user's dream_major when user loads
   useEffect(() => {
@@ -792,6 +821,7 @@ function EssayGraderContent() {
           activeSession={activeSession}
           onResumeSession={handleResumeSession}
           isStarting={createSessionMutation.isPending}
+          isCheckingActiveSessions={isCheckingActiveSessions}
           showActiveSessionPopup={showActiveSessionPopup}
           onClosePopup={() => setShowActiveSessionPopup(false)}
           selectedMajor={selectedMajor}
@@ -849,6 +879,7 @@ function IntroScreen({
   activeSession,
   onResumeSession,
   isStarting,
+  isCheckingActiveSessions,
   showActiveSessionPopup,
   onClosePopup,
   selectedMajor,
@@ -860,6 +891,7 @@ function IntroScreen({
   activeSession: GradingSession | null;
   onResumeSession: (sessionId: string) => void;
   isStarting: boolean;
+  isCheckingActiveSessions: boolean;
   showActiveSessionPopup: boolean;
   onClosePopup: () => void;
   selectedMajor: string;
@@ -919,7 +951,7 @@ function IntroScreen({
           className="max-w-3xl w-full h-full overflow-y-auto"
         >
           {/* Welcome Card */}
-          <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-4">
+          <div className="bg-white rounded-lg shadow-lg mb-4">
             {/* Gradient Header */}
             <div className="bg-primary-600 px-4 sm:px-6 py-6">
               <motion.div
@@ -968,7 +1000,7 @@ function IntroScreen({
                     <CheckCircleIcon className="w-5 h-5 text-secondary-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="font-medium text-neutral-900 text-sm">
-                        5 Pertanyaan Essay
+                        Pertanyaan Essay Menggunakan AI
                       </p>
                       <p className="text-neutral-600 text-xs">
                         Jawab dengan jujur dan detail sesuai dengan pengalaman
@@ -1108,20 +1140,22 @@ function IntroScreen({
                 className="flex items-center gap-2"
               >
                 <motion.button
-                  whileHover={{ scale: isStarting ? 1 : 1.05 }}
-                  whileTap={{ scale: isStarting ? 1 : 0.95 }}
+                  whileHover={{ scale: (isStarting || isCheckingActiveSessions) ? 1 : 1.05 }}
+                  whileTap={{ scale: (isStarting || isCheckingActiveSessions) ? 1 : 0.95 }}
                   onClick={onStart}
-                  disabled={isStarting}
+                  disabled={isStarting || isCheckingActiveSessions}
                   className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 sm:px-6 py-2 flex items-center justify-center space-x-2 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>
-                    {isStarting
+                    {isCheckingActiveSessions
+                      ? "Memeriksa..."
+                      : isStarting
                       ? "Memulai..."
                       : activeSession
                         ? "Mulai Assessment Baru"
                         : "Mulai Test Sekarang"}
                   </span>
-                  {isStarting ? (
+                  {(isStarting || isCheckingActiveSessions) ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{
@@ -1140,7 +1174,7 @@ function IntroScreen({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onBack}
-                  disabled={isStarting}
+                  disabled={isStarting || isCheckingActiveSessions}
                   className="btn btn-secondary btn-sm sm:btn-md px-4 sm:px-6 py-2 text-xs sm:text-sm disabled:opacity-50"
                 >
                   Kembali
@@ -1692,7 +1726,24 @@ function TestScreen({
                       ))}
                     </div>
 
-                    {isLastQuestion ? (
+                    {/* Tombol untuk soal yang sudah dijawab (soal sebelumnya) */}
+                    {currentQuestionIndex < questions.length - 1 ? (
+                      <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          // Navigasi ke soal berikutnya tanpa submit (soal sudah dijawab)
+                          const nextQuestionId = questions[currentQuestionIndex + 1]?.id;
+                          if (nextQuestionId) {
+                            onQuestionSelect(nextQuestionId);
+                          }
+                        }}
+                        className="btn btn-primary px-3 py-2 text-xs flex items-center space-x-1"
+                      >
+                        <span>Lanjut</span>
+                        <span>→</span>
+                      </motion.button>
+                    ) : isLastQuestion ? (
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}

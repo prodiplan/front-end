@@ -1,7 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect } from "react";
 import {
   ArrowLeftIcon,
   CheckCircleIcon,
@@ -10,6 +11,15 @@ import {
   ExclamationTriangleIcon,
   StarIcon,
   ArrowTrendingUpIcon,
+  BookOpenIcon,
+  MapIcon,
+  BriefcaseIcon,
+  ClockIcon,
+  AcademicCapIcon,
+  TrophyIcon,
+  BuildingOfficeIcon,
+  CurrencyDollarIcon,
+  XMarkIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { useGradingSession, useGradingResult } from "@/hooks/useGradingSession";
@@ -33,35 +43,103 @@ interface AssessmentDetail {
     };
     personality_traits: Record<string, string>;
     career_suggestions: string[];
+    book_recommendations?: {
+      title: string;
+      author: string;
+      isbn?: string;
+      cover_url?: string;
+      description: string;
+      relevance_score: number;
+      difficulty_level: "beginner" | "intermediate" | "advanced";
+      topics: string[];
+      estimated_reading_time?: string;
+      purchase_links?: {
+        tokopedia?: string;
+        shopee?: string;
+        gramedia?: string;
+      };
+    }[];
+    learning_path?: {
+      phase: number;
+      title: string;
+      description: string;
+      estimated_duration: string;
+      skills_to_learn: string[];
+      resources: string[];
+      milestones: string[];
+    }[];
+    action_plan?: {
+      priority: "high" | "medium" | "low";
+      title: string;
+      description: string;
+      timeframe: string;
+      category: "study" | "practice" | "networking" | "certification" | "project";
+      completed?: boolean;
+    }[];
+    industry_insights?: {
+      job_market_demand: "high" | "medium" | "low";
+      demand_description: string;
+      average_salary_range: string;
+      salary_progression: {
+        entry_level: string;
+        mid_level: string;
+        senior_level: string;
+      };
+      growth_potential: number;
+      growth_description: string;
+      top_companies: string[];
+      required_certifications?: string[];
+      skills_in_demand: string[];
+      future_outlook: string;
+    };
   };
 }
 
 export default function ResultDetailPage() {
   const params = useParams();
   const sessionId = params.resultId as string;
+  const [enableFetch, setEnableFetch] = useState(false);
+  const [showNotReady, setShowNotReady] = useState(false);
+
+  // Delay 5 detik sebelum mulai fetch result
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setEnableFetch(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const { data: session, isLoading: isSessionLoading } =
     useGradingSession(sessionId);
   const { data: resultData, isLoading: isResultLoading } =
-    useGradingResult(sessionId);
+    useGradingResult(sessionId, enableFetch);
 
-  const isLoading = isSessionLoading || isResultLoading;
+  // Jika sudah fetch tapi hasil tidak ada, tampilkan pesan
+  useEffect(() => {
+    if (enableFetch && !isResultLoading && !resultData) {
+      const timer = setTimeout(() => {
+        setShowNotReady(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else if (resultData) {
+      // Reset showNotReady jika data berhasil dimuat
+      setShowNotReady(false);
+    }
+  }, [enableFetch, isResultLoading, resultData]);
+
+  const isLoading = isSessionLoading || (enableFetch && isResultLoading);
 
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4"
-          >
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
             <SparklesIcon className="w-8 h-8 text-primary-600" />
-          </motion.div>
+          </div>
           <p className="text-neutral-800 font-medium text-lg mb-2">
             Memuat hasil grading Anda...
           </p>
-          <p className="text-neutral-600 text-sm animate-pulse">
+          <p className="text-neutral-600 text-sm">
             Mohon tunggu sebentar
           </p>
         </div>
@@ -69,7 +147,7 @@ export default function ResultDetailPage() {
     );
   }
 
-  if (!session || !resultData) {
+  if (!session || !resultData || showNotReady) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-neutral-50 via-white to-primary-50">
         <motion.div
@@ -78,25 +156,14 @@ export default function ResultDetailPage() {
           transition={{ duration: 0.6 }}
           className="text-center max-w-md mx-auto px-6"
         >
-          {/* Animated Icon */}
-          <motion.div
-            animate={{
-              scale: [1, 1.1, 1],
-              rotate: [0, 5, -5, 0]
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-primary-100 rounded-full mb-6"
-          >
+          {/* Icon */}
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary-100 rounded-full mb-6">
             <SparklesIcon className="w-10 h-10 text-primary-600" />
-          </motion.div>
+          </div>
 
           {/* Title */}
           <h1 className="text-2xl font-bold text-neutral-900 mb-3">
-            Grading Sedang Diproses
+            AI Sedang Menganalisis
           </h1>
 
           {/* Description */}
@@ -104,25 +171,8 @@ export default function ResultDetailPage() {
             AI kami sedang menganalisis jawaban Anda secara mendalam untuk memberikan hasil terbaik.
           </p>
           <p className="text-neutral-500 text-sm mb-8">
-            Proses ini biasanya memakan waktu beberapa detik. Silakan kembali ke profil dan cek kembali sebentar lagi.
+            Silakan kembali ke profil dan cek kembali sebentar lagi.
           </p>
-
-          {/* Loading Progress */}
-          <div className="mb-8">
-            <div className="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
-              <motion.div
-                animate={{
-                  x: ["-100%", "100%"]
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-                className="h-full w-1/3 bg-gradient-to-r from-primary-400 to-primary-600"
-              />
-            </div>
-          </div>
 
           {/* Action Button */}
           <Link href="/profile" className="btn btn-primary btn-lg inline-flex items-center space-x-2">
@@ -187,6 +237,10 @@ export default function ResultDetailPage() {
       },
       personality_traits: resultData.analysis_report?.personality_traits || {},
       career_suggestions: resultData.analysis_report?.career_suggestions || [],
+      book_recommendations: resultData.analysis_report?.book_recommendations || [],
+      learning_path: resultData.analysis_report?.learning_path || [],
+      action_plan: resultData.analysis_report?.action_plan || [],
+      industry_insights: resultData.analysis_report?.industry_insights,
     },
   };
 
@@ -415,6 +469,8 @@ function OverviewTab({
   result: AssessmentDetail;
   colors: any;
 }) {
+  const [selectedBook, setSelectedBook] = useState<any | null>(null);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -422,70 +478,520 @@ function OverviewTab({
       transition={{ duration: 0.6 }}
       className="space-y-8"
     >
-      {/* Strengths */}
-      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
-          <StarIcon className="w-6 h-6 text-yellow-500" />
-          <span>Kekuatan Anda</span>
-        </h3>
-        <div className="grid grid-cols-1 gap-4">
-          {result.analysis_report.strengths.map((strength, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3"
-            >
-              <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
-              <p className="text-neutral-700">{strength}</p>
-            </motion.div>
-          ))}
+      {/* Strengths & Weaknesses - Side by Side */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Strengths */}
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
+            <StarIcon className="w-6 h-6 text-yellow-500" />
+            <span>Kekuatan Anda</span>
+          </h3>
+          <div className="grid grid-cols-1 gap-4">
+            {result.analysis_report.strengths.map((strength, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-start space-x-3"
+              >
+                <CheckCircleIcon className="w-5 h-5 text-green-600 flex-shrink-0 mt-1" />
+                <p className="text-neutral-700">{strength}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Weaknesses */}
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
+            <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
+            <span>Area Pengembangan</span>
+          </h3>
+          <div className="grid grid-cols-1 gap-4">
+            {result.analysis_report.weaknesses.map((weakness, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3"
+              >
+                <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-1" />
+                <p className="text-neutral-700">{weakness}</p>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Weaknesses */}
-      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
-          <ExclamationTriangleIcon className="w-6 h-6 text-yellow-500" />
-          <span>Area Pengembangan</span>
-        </h3>
-        <div className="grid grid-cols-1 gap-4">
-          {result.analysis_report.weaknesses.map((weakness, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3"
-            >
-              <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-1" />
-              <p className="text-neutral-700">{weakness}</p>
-            </motion.div>
-          ))}
-        </div>
-      </div>
+      {/* Book Recommendations */}
+      {result.analysis_report.book_recommendations && result.analysis_report.book_recommendations.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
+            <BookOpenIcon className="w-6 h-6 text-primary-600" />
+            <span>Rekomendasi Buku</span>
+          </h3>
+          <div className="flex flex-wrap justify-center gap-6">
+            {result.analysis_report.book_recommendations.map((book, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                onClick={() => setSelectedBook(book)}
+                className="bg-gradient-to-br from-neutral-50 to-primary-50 border border-neutral-200 rounded-xl p-5 hover:shadow-lg transition-all cursor-pointer hover:scale-105 w-full sm:w-80 max-w-sm"
+              >
+                <div className="flex items-start space-x-3 mb-3">
+                  <div className="flex-shrink-0 w-10 h-10 bg-primary-600 rounded-lg flex items-center justify-center">
+                    <BookOpenIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-neutral-900 mb-1 line-clamp-2">
+                      {book.title}
+                    </h4>
+                    <p className="text-sm text-neutral-600">oleh {book.author}</p>
+                  </div>
+                </div>
 
-      {/* Career Suggestions */}
-      <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
-        <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
-          <ArrowTrendingUpIcon className="w-6 h-6 text-primary-600" />
-          <span>Saran Karir</span>
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {result.analysis_report.career_suggestions.map((career, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="bg-primary-50 border border-primary-200 rounded-lg p-4 text-center"
-            >
-              <p className="font-semibold text-neutral-900">{career}</p>
-            </motion.div>
-          ))}
+                <p className="text-sm text-neutral-700 mb-3 line-clamp-3">
+                  {book.description}
+                </p>
+
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {book.topics.slice(0, 3).map((topic, i) => (
+                    <span
+                      key={i}
+                      className="px-2 py-1 bg-primary-100 text-primary-700 text-xs rounded-full"
+                    >
+                      {topic}
+                    </span>
+                  ))}
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-neutral-600">
+                  <span className="flex items-center space-x-1">
+                    <AcademicCapIcon className="w-4 h-4" />
+                    <span className="capitalize">{book.difficulty_level}</span>
+                  </span>
+                  {book.estimated_reading_time && (
+                    <span className="flex items-center space-x-1">
+                      <ClockIcon className="w-4 h-4" />
+                      <span>{book.estimated_reading_time}</span>
+                    </span>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Book Detail Modal */}
+          <AnimatePresence>
+            {selectedBook && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setSelectedBook(null)}
+                className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4"
+              >
+                <motion.div
+                  initial={{ scale: 0.9, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.9, y: 20 }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                >
+                  {/* Modal Header */}
+                  <div className="sticky top-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white p-6 rounded-t-2xl flex items-start justify-between">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold mb-2">{selectedBook.title}</h2>
+                      <p className="text-primary-100">oleh {selectedBook.author}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedBook(null)}
+                      className="ml-4 p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
+                    >
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {/* Modal Content */}
+                  <div className="p-6 space-y-6">
+                    {/* Description */}
+                    <div>
+                      <h3 className="font-bold text-neutral-900 mb-2 flex items-center space-x-2">
+                        <BookOpenIcon className="w-5 h-5 text-primary-600" />
+                        <span>Deskripsi</span>
+                      </h3>
+                      <p className="text-neutral-700 leading-relaxed">{selectedBook.description}</p>
+                    </div>
+
+                    {/* Topics */}
+                    <div>
+                      <h3 className="font-bold text-neutral-900 mb-3">Topik Pembahasan</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedBook.topics.map((topic: string, i: number) => (
+                          <span
+                            key={i}
+                            className="px-3 py-1.5 bg-primary-100 text-primary-700 text-sm rounded-full font-medium"
+                          >
+                            {topic}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Book Details */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-neutral-50 rounded-lg p-4">
+                        <p className="text-xs text-neutral-600 mb-1">Tingkat Kesulitan</p>
+                        <p className="font-semibold text-neutral-900 capitalize">{selectedBook.difficulty_level}</p>
+                      </div>
+                      {selectedBook.estimated_reading_time && (
+                        <div className="bg-neutral-50 rounded-lg p-4">
+                          <p className="text-xs text-neutral-600 mb-1">Estimasi Waktu Baca</p>
+                          <p className="font-semibold text-neutral-900">{selectedBook.estimated_reading_time}</p>
+                        </div>
+                      )}
+                      {selectedBook.isbn && (
+                        <div className="bg-neutral-50 rounded-lg p-4 col-span-2">
+                          <p className="text-xs text-neutral-600 mb-1">ISBN</p>
+                          <p className="font-semibold text-neutral-900">{selectedBook.isbn}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Purchase Links */}
+                    {selectedBook.purchase_links && (
+                      <div>
+                        <h3 className="font-bold text-neutral-900 mb-3">Beli Buku</h3>
+                        <div className="flex flex-wrap gap-3">
+                          {selectedBook.purchase_links.tokopedia && (
+                            <a
+                              href={selectedBook.purchase_links.tokopedia}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 min-w-[140px] px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-center font-semibold"
+                            >
+                              Tokopedia
+                            </a>
+                          )}
+                          {selectedBook.purchase_links.shopee && (
+                            <a
+                              href={selectedBook.purchase_links.shopee}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 min-w-[140px] px-4 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors text-center font-semibold"
+                            >
+                              Shopee
+                            </a>
+                          )}
+                          {selectedBook.purchase_links.gramedia && (
+                            <a
+                              href={selectedBook.purchase_links.gramedia}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="flex-1 min-w-[140px] px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-center font-semibold"
+                            >
+                              Gramedia
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-      </div>
+      )}
+
+      {/* Learning Path */}
+      {result.analysis_report.learning_path && result.analysis_report.learning_path.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
+            <MapIcon className="w-6 h-6 text-primary-600" />
+            <span>Roadmap Pembelajaran</span>
+          </h3>
+          <div className="space-y-6">
+            {result.analysis_report.learning_path.map((phase, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="relative bg-gradient-to-r from-primary-50 to-neutral-50 border border-primary-200 rounded-xl p-6"
+              >
+                {/* Phase Number Badge */}
+                <div className="absolute -left-4 top-6 w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-white font-bold text-lg">{phase.phase}</span>
+                </div>
+
+                <div className="ml-10">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="text-xl font-bold text-neutral-900">{phase.title}</h4>
+                    <span className="text-sm text-neutral-600 flex items-center space-x-1">
+                      <ClockIcon className="w-4 h-4" />
+                      <span>{phase.estimated_duration}</span>
+                    </span>
+                  </div>
+
+                  <p className="text-neutral-700 mb-4">{phase.description}</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="font-semibold text-neutral-900 mb-2 flex items-center space-x-1">
+                        <AcademicCapIcon className="w-4 h-4" />
+                        <span>Skills yang Dipelajari:</span>
+                      </p>
+                      <ul className="space-y-1">
+                        {phase.skills_to_learn.map((skill, i) => (
+                          <li key={i} className="text-sm text-neutral-700 flex items-start space-x-2">
+                            <span className="text-primary-600 mt-1">•</span>
+                            <span>{skill}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-neutral-900 mb-2">Resources:</p>
+                      <ul className="space-y-1">
+                        {phase.resources.map((resource, i) => (
+                          <li key={i} className="text-sm text-neutral-700 flex items-start space-x-2">
+                            <span className="text-primary-600 mt-1">•</span>
+                            <span>{resource}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold text-neutral-900 mb-2 flex items-center space-x-1">
+                        <TrophyIcon className="w-4 h-4" />
+                        <span>Milestones:</span>
+                      </p>
+                      <ul className="space-y-1">
+                        {phase.milestones.map((milestone, i) => (
+                          <li key={i} className="text-sm text-neutral-700 flex items-start space-x-2">
+                            <span className="text-primary-600 mt-1">✓</span>
+                            <span>{milestone}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Action Plan */}
+      {result.analysis_report.action_plan && result.analysis_report.action_plan.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
+            <CheckCircleIcon className="w-6 h-6 text-primary-600" />
+            <span>Rencana Aksi</span>
+          </h3>
+          <div className="space-y-3">
+            {result.analysis_report.action_plan.map((action, index) => {
+              const priorityColors = {
+                high: { bg: "bg-red-50", border: "border-red-300", text: "text-red-700", badge: "bg-red-600" },
+                medium: { bg: "bg-yellow-50", border: "border-yellow-300", text: "text-yellow-700", badge: "bg-yellow-600" },
+                low: { bg: "bg-blue-50", border: "border-blue-300", text: "text-blue-700", badge: "bg-blue-600" },
+              };
+              const colors = priorityColors[action.priority];
+
+              const categoryIcons = {
+                study: AcademicCapIcon,
+                practice: TrophyIcon,
+                networking: BuildingOfficeIcon,
+                certification: StarIcon,
+                project: LightBulbIcon,
+              };
+              const IconComponent = categoryIcons[action.category];
+
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.5, delay: index * 0.05 }}
+                  className={`${colors.bg} border ${colors.border} rounded-lg p-4`}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className={`${colors.badge} w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0`}>
+                      <IconComponent className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between mb-2">
+                        <h4 className="font-bold text-neutral-900">{action.title}</h4>
+                        <div className="flex items-center space-x-2 flex-shrink-0 ml-2">
+                          <span className={`text-xs px-2 py-1 ${colors.badge} text-white rounded-full uppercase font-semibold`}>
+                            {action.priority}
+                          </span>
+                          <span className="text-xs px-2 py-1 bg-neutral-200 text-neutral-700 rounded-full capitalize">
+                            {action.category}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-sm text-neutral-700 mb-2">{action.description}</p>
+                      <div className="flex items-center space-x-1 text-xs text-neutral-600">
+                        <ClockIcon className="w-4 h-4" />
+                        <span>{action.timeframe}</span>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Industry Insights */}
+      {result.analysis_report.industry_insights && (
+        <div className="bg-white rounded-2xl shadow-md p-6 sm:p-8">
+          <h3 className="text-2xl font-bold text-neutral-900 mb-6 flex items-center space-x-2">
+            <BriefcaseIcon className="w-6 h-6 text-primary-600" />
+            <span>Outlook Industri & Karir</span>
+          </h3>
+
+          <div className="space-y-6">
+            {/* Market Demand & Growth */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-xl p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-bold text-neutral-900">Permintaan Pasar</h4>
+                  <span className={`px-3 py-1 rounded-full text-sm font-semibold ${result.analysis_report.industry_insights.job_market_demand === "high"
+                    ? "bg-green-600 text-white"
+                    : result.analysis_report.industry_insights.job_market_demand === "medium"
+                      ? "bg-yellow-600 text-white"
+                      : "bg-red-600 text-white"
+                    }`}>
+                    {result.analysis_report.industry_insights.job_market_demand.toUpperCase()}
+                  </span>
+                </div>
+                <p className="text-sm text-neutral-700">
+                  {result.analysis_report.industry_insights.demand_description}
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-5">
+                <h4 className="font-bold text-neutral-900 mb-3">Potensi Pertumbuhan</h4>
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className="text-3xl font-bold text-primary-600">
+                    {result.analysis_report.industry_insights.growth_potential}/10
+                  </div>
+                  <div className="flex-1 bg-neutral-200 rounded-full h-3">
+                    <div
+                      className="bg-primary-600 h-full rounded-full transition-all"
+                      style={{ width: `${result.analysis_report.industry_insights.growth_potential * 10}%` }}
+                    />
+                  </div>
+                </div>
+                <p className="text-sm text-neutral-700">
+                  {result.analysis_report.industry_insights.growth_description}
+                </p>
+              </div>
+            </div>
+
+            {/* Salary Progression */}
+            <div className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-xl p-5">
+              <h4 className="font-bold text-neutral-900 mb-4 flex items-center space-x-2">
+                <CurrencyDollarIcon className="w-5 h-5" />
+                <span>Proyeksi Gaji</span>
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-xs text-neutral-600 mb-1">Entry Level</p>
+                  <p className="font-bold text-neutral-900">
+                    {result.analysis_report.industry_insights.salary_progression.entry_level}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-600 mb-1">Mid Level (3-5 tahun)</p>
+                  <p className="font-bold text-neutral-900">
+                    {result.analysis_report.industry_insights.salary_progression.mid_level}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-neutral-600 mb-1">Senior Level (7+ tahun)</p>
+                  <p className="font-bold text-neutral-900">
+                    {result.analysis_report.industry_insights.salary_progression.senior_level}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Top Companies */}
+            <div>
+              <h4 className="font-bold text-neutral-900 mb-3 flex items-center space-x-2">
+                <BuildingOfficeIcon className="w-5 h-5" />
+                <span>Top Companies</span>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {result.analysis_report.industry_insights.top_companies.map((company, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-2 bg-neutral-100 border border-neutral-300 text-neutral-800 rounded-lg text-sm font-medium"
+                  >
+                    {company}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Skills in Demand */}
+            <div>
+              <h4 className="font-bold text-neutral-900 mb-3 flex items-center space-x-2">
+                <StarIcon className="w-5 h-5" />
+                <span>Skills yang Paling Dicari</span>
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {result.analysis_report.industry_insights.skills_in_demand.map((skill, i) => (
+                  <span
+                    key={i}
+                    className="px-3 py-2 bg-primary-100 border border-primary-300 text-primary-700 rounded-lg text-sm font-semibold"
+                  >
+                    {skill}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Required Certifications */}
+            {result.analysis_report.industry_insights.required_certifications &&
+              result.analysis_report.industry_insights.required_certifications.length > 0 && (
+                <div>
+                  <h4 className="font-bold text-neutral-900 mb-3">Sertifikasi yang Direkomendasikan</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {result.analysis_report.industry_insights.required_certifications.map((cert, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-2 bg-yellow-100 border border-yellow-300 text-yellow-800 rounded-lg text-sm font-medium"
+                      >
+                        {cert}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+            {/* Future Outlook */}
+            <div className="bg-gradient-to-r from-neutral-50 to-primary-50 border border-neutral-200 rounded-xl p-5">
+              <h4 className="font-bold text-neutral-900 mb-2">Outlook Masa Depan</h4>
+              <p className="text-sm text-neutral-700">
+                {result.analysis_report.industry_insights.future_outlook}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </motion.div>
   );
 }

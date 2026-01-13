@@ -432,9 +432,6 @@ export default function AssessmentsPage() {
                               }
                             )}
                           </p>
-                          <p className="text-xs text-gray-400 mt-1">
-                            {assessment.question_count || 0} pertanyaan dijawab
-                          </p>
                         </div>
                         <div className="flex items-center space-x-2">
                           <p className="text-sm text-gray-500 font-medium">

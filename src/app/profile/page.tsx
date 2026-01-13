@@ -476,11 +476,6 @@ export default function ProfilePage() {
                                         assessment.created_at
                                       ).toLocaleDateString("id-ID")}
                                     </p>
-                                    <p className="text-xs text-blue-600 mt-1">
-                                      {assessment.question_count || 0}/
-                                      {assessment.max_questions || 10}{" "}
-                                      pertanyaan dijawab
-                                    </p>
                                   </div>
                                   <div className="flex items-center space-x-1">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -502,10 +497,6 @@ export default function ProfilePage() {
                                     {new Date(
                                       assessment.created_at
                                     ).toLocaleDateString("id-ID")}
-                                  </p>
-                                  <p className="text-xs text-gray-400 mt-1">
-                                    {assessment.question_count || 0} pertanyaan
-                                    dijawab
                                   </p>
                                 </div>
                                 <div className="flex items-center space-x-1">

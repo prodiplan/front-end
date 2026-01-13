@@ -1,6 +1,6 @@
 // API Configuration
 const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "https://prodiplan.my.id";
+  process.env.NEXT_PUBLIC_API_URL || "https://api.prodiplan.my.id";
 
 export const API_ENDPOINTS = {
   // Auth endpoints - direct path routing without /api/v1 prefix

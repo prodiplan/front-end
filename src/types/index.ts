@@ -85,6 +85,55 @@ export interface AnalysisReport {
     creativity: string;
   };
   career_suggestions: string[];
+  book_recommendations?: {
+    title: string;
+    author: string;
+    isbn?: string;
+    cover_url?: string;
+    description: string;
+    relevance_score: number;
+    difficulty_level: "beginner" | "intermediate" | "advanced";
+    topics: string[];
+    estimated_reading_time?: string;
+    purchase_links?: {
+      tokopedia?: string;
+      shopee?: string;
+      gramedia?: string;
+    };
+  }[];
+  learning_path?: {
+    phase: number;
+    title: string;
+    description: string;
+    estimated_duration: string;
+    skills_to_learn: string[];
+    resources: string[];
+    milestones: string[];
+  }[];
+  action_plan?: {
+    priority: "high" | "medium" | "low";
+    title: string;
+    description: string;
+    timeframe: string;
+    category: "study" | "practice" | "networking" | "certification" | "project";
+    completed?: boolean;
+  }[];
+  industry_insights?: {
+    job_market_demand: "high" | "medium" | "low";
+    demand_description: string;
+    average_salary_range: string;
+    salary_progression: {
+      entry_level: string;
+      mid_level: string;
+      senior_level: string;
+    };
+    growth_potential: number;
+    growth_description: string;
+    top_companies: string[];
+    required_certifications?: string[];
+    skills_in_demand: string[];
+    future_outlook: string;
+  };
 }
 
 export interface Pagination {

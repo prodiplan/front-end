@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useEffect, Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -35,12 +35,32 @@ function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
+  const [enableFetch, setEnableFetch] = useState(false);
+  const [showNotReady, setShowNotReady] = useState(false);
+
+  // Delay 5 detik sebelum mulai fetch result
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setEnableFetch(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
 
   const {
     data: resultData,
     isLoading: isResultLoading,
     error,
-  } = useGradingResult(sessionId || undefined);
+  } = useGradingResult(sessionId || undefined, enableFetch);
+
+  // Jika sudah fetch tapi hasil tidak ada, tampilkan pesan
+  useEffect(() => {
+    if (enableFetch && !isResultLoading && !resultData && !error) {
+      const timer = setTimeout(() => {
+        setShowNotReady(true);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [enableFetch, isResultLoading, resultData, error]);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -48,11 +68,11 @@ function ResultContent() {
     }
   }, [user, isAuthLoading, router]);
 
-  if (isAuthLoading || isResultLoading) {
+  if (isAuthLoading || (enableFetch && isResultLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4 animate-pulse">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
             <SparklesIcon className="w-8 h-8 text-primary-600" />
           </div>
           <p className="text-neutral-600">Memuat hasil analisis...</p>
@@ -65,22 +85,22 @@ function ResultContent() {
     return null;
   }
 
-  if (error || !resultData) {
+  if (showNotReady || (error || !resultData)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center max-w-md px-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
-            <LightBulbIcon className="w-8 h-8 text-red-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+            <SparklesIcon className="w-8 h-8 text-primary-600" />
           </div>
           <h2 className="text-xl font-bold text-neutral-900 mb-2">
-            Gagal Memuat Hasil
+            AI Sedang Menganalisis
           </h2>
           <p className="text-neutral-600 mb-6">
-            Maaf, kami tidak dapat memuat hasil analisis Anda saat ini. Silakan
-            coba lagi nanti atau hubungi dukungan jika masalah berlanjut.
+            AI kami sedang menganalisis jawaban Anda secara mendalam untuk memberikan hasil terbaik.
+            Silakan kembali ke profil dan cek kembali sebentar lagi.
           </p>
-          <Link href="/dashboard" className="btn btn-primary">
-            Kembali ke Dashboard
+          <Link href="/profile" className="btn btn-primary">
+            Kembali ke Profil
           </Link>
         </div>
       </div>

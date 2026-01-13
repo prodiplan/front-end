@@ -7,7 +7,7 @@
 
 import { io, Socket } from "socket.io-client";
 
-const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://prodiplan.my.id";
+const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://api.prodiplan.my.id";
 const WEBSOCKET_PATH = "/socket.io";
 
 /**
