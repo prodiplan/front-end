@@ -12,6 +12,7 @@ import {
   DocumentTextIcon,
   ArrowRightIcon,
   SparklesIcon,
+  ClockIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import SplitText from "@/components/ui/SplitText";
