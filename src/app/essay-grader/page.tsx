@@ -1519,7 +1519,6 @@ function TestScreen({
   showFunFactAnimation: boolean;
   errorMessage: string | null;
   onClearError: () => void;
-  showFunFactAnimation: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const progress =
