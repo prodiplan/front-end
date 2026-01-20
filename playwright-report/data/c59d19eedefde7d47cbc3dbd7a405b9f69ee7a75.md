@@ -1,0 +1,51 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - generic [ref=e6]:
+      - link "ProdiPlan" [ref=e7] [cursor=pointer]:
+        - /url: /
+        - img [ref=e9]
+        - generic [ref=e12]: ProdiPlan
+      - generic [ref=e13]:
+        - button "Masuk" [ref=e14] [cursor=pointer]
+        - button "Daftar" [ref=e15] [cursor=pointer]
+      - heading "Selamat Datang Kembali" [level=2] [ref=e17]:
+        - generic "Selamat Datang Kembali" [ref=e18]:
+          - generic [ref=e19]: Selamat
+          - generic [ref=e20]: Datang
+          - generic [ref=e21]: Kembali
+      - paragraph [ref=e23]:
+        - generic [ref=e24]: Masuk
+        - generic [ref=e25]: ke
+        - generic [ref=e26]: akun
+        - generic [ref=e27]: Anda
+        - generic [ref=e28]: untuk
+        - generic [ref=e29]: melihat
+        - generic [ref=e30]: hasil
+        - generic [ref=e31]: analisis
+        - generic [ref=e32]: jurusan
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - generic [ref=e36]: Email
+        - textbox "Email" [ref=e37]:
+          - /placeholder: nama@email.com
+      - generic [ref=e38]:
+        - generic [ref=e39]: Password
+        - generic [ref=e40]:
+          - textbox "Password" [ref=e41]:
+            - /placeholder: Masukkan password
+          - button [ref=e42] [cursor=pointer]:
+            - img [ref=e43]
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - checkbox "Ingat saya" [ref=e48]
+          - generic [ref=e49]: Ingat saya
+        - link "Lupa password?" [ref=e51] [cursor=pointer]:
+          - /url: /auth/forgot-password
+      - button "Masuk" [ref=e53] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e59] [cursor=pointer]:
+    - img [ref=e60]
+  - alert [ref=e63]
+```

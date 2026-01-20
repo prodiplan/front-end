@@ -1,0 +1,115 @@
+﻿node.exe : [2m[WebServer] [22m [33m[1mΓÜá[22m[39m Warning: Next.js inferred 
+your workspace root, but it may not be correct.
+At C:\Program Files\nodejs\npx.ps1:29 char:3
++   & $NODE_EXE $NPX_CLI_JS $args
++   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([2m[WebServer]...not be correct.:Stri 
+   ng) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[2m[WebServer] [22m We detected multiple lockfiles and selected the directory of 
+E:\coding\Prodi\package-lock.json as the root directory.
+[2m[WebServer] [22m To silence this warning, set `turbopack.root` in your Next.js 
+config, or consider removing one of the lockfiles if it's not needed.
+[2m[WebServer] [22m   See https://nextjs.org/docs/app/api-reference/config/next-co
+nfig-js/turbopack#root-directory for more information.
+[2m[WebServer] [22m Detected additional lockfiles: 
+[2m[WebServer] [22m   * E:\coding\Prodi\front-end\pnpm-lock.yaml
+[2m[WebServer] [22m
+[2m[WebServer] [22m [33m[1mΓÜá[22m[39m The "middleware" file convention is 
+deprecated. Please use "proxy" instead. Learn more: 
+https://nextjs.org/docs/messages/middleware-to-proxy
+[2m[WebServer] [22m[baseline-browser-mapping] The data in this module is over two 
+months old.  To ensure accurate Baseline data, please update: `npm i 
+baseline-browser-mapping@latest -D`
+
+Running 99 tests using 1 worker
+
+  Γ£ô   1 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:8:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should load the landing page successfully (1.0s)
+  Γ£ÿ   2 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:12:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display the navigation bar (5.9s)
+  Γ£ÿ   3 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:12:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display the navigation bar (retry #1) (6.3s)
+  Γ£ÿ   4 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:12:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display the navigation bar (retry #2) (6.0s)
+  Γ£ô   5 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:18:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should navigate to auth page when clicking login/register button (2.9s)
+  Γ£ô   6 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:27:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display hero section (1.0s)
+  Γ£ô   7 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:33:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should scroll to features section (1.2s)
+  Γ£ô   8 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:42:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display how it works section (1.1s)
+  Γ£ô   9 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:49:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display testimonials section (1.9s)
+  Γ£ô  10 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:57:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display CTA section (867ms)
+  Γ£ô  11 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:65:7 ΓÇ║ Landing Page - Navigation and UI ΓÇ║ should display footer (899ms)
+  Γ£ÿ  12 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:73:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on mobile (5.9s)
+  Γ£ÿ  13 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:73:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on mobile (retry #1) (6.0s)
+  Γ£ÿ  14 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:73:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on mobile (retry #2) (5.8s)
+  Γ£ÿ  15 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:81:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on tablet (6.3s)
+  Γ£ÿ  16 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:81:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on tablet (retry #1) (9.5s)
+  Γ£ÿ  17 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:81:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on tablet (retry #2) (6.0s)
+  Γ£ÿ  18 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:89:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on desktop (6.0s)
+  Γ£ÿ  19 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:89:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on desktop (retry #1) (6.3s)
+  Γ£ÿ  20 [chromium] ΓÇ║ tests\01-landing-page.spec.ts:89:7 ΓÇ║ Landing Page - Responsive Design ΓÇ║ should be responsive on desktop (retry #2) (6.0s)
+  Γ£ô  21 [chromium] ΓÇ║ tests\02-authentication.spec.ts:8:7 ΓÇ║ Authentication - Login Flow ΓÇ║ should display login form by default (872ms)
+  Γ£ô  22 [chromium] ΓÇ║ tests\02-authentication.spec.ts:14:7 ΓÇ║ Authentication - Login Flow ΓÇ║ should show validation error for empty email (2.7s)
+  Γ£ô  23 [chromium] ΓÇ║ tests\02-authentication.spec.ts:22:7 ΓÇ║ Authentication - Login Flow ΓÇ║ should show validation error for invalid email format (2.2s)
+  Γ£ô  24 [chromium] ΓÇ║ tests\02-authentication.spec.ts:32:7 ΓÇ║ Authentication - Login Flow ΓÇ║ should show validation error for empty password (2.2s)
+  Γ£ô  25 [chromium] ΓÇ║ tests\02-authentication.spec.ts:41:7 ΓÇ║ Authentication - Login Flow ΓÇ║ should toggle password visibility (2.2s)
+  Γ£ô  26 [chromium] ΓÇ║ tests\02-authentication.spec.ts:61:7 ΓÇ║ Authentication - Login Flow ΓÇ║ should have forgot password link (2.7s)
+  Γ£ÿ  27 [chromium] ΓÇ║ tests\02-authentication.spec.ts:76:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should switch to register form (6.9s)
+  Γ£ÿ  28 [chromium] ΓÇ║ tests\02-authentication.spec.ts:76:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should switch to register form (retry #1) (7.1s)
+  Γ£ÿ  29 [chromium] ΓÇ║ tests\02-authentication.spec.ts:76:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should switch to register form (retry #2) (7.0s)
+  Γ£ÿ  30 [chromium] ΓÇ║ tests\02-authentication.spec.ts:86:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should display all required register fields (7.0s)
+  Γ£ÿ  31 [chromium] ΓÇ║ tests\02-authentication.spec.ts:86:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should display all required register fields (retry #1) (7.0s)
+  Γ£ÿ  32 [chromium] ΓÇ║ tests\02-authentication.spec.ts:86:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should display all required register fields (retry #2) (7.1s)
+  Γ£ÿ  33 [chromium] ΓÇ║ tests\02-authentication.spec.ts:100:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should validate password matching (31.0s)
+  Γ£ÿ  34 [chromium] ΓÇ║ tests\02-authentication.spec.ts:100:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should validate password matching (retry #1) (35.5s)
+  Γ£ÿ  35 [chromium] ΓÇ║ tests\02-authentication.spec.ts:100:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should validate password matching (retry #2) (31.0s)
+  Γ£ô  36 [chromium] ΓÇ║ tests\02-authentication.spec.ts:123:7 ΓÇ║ Authentication - Register Flow ΓÇ║ should have searchable select for school and major (2.3s)
+  Γ£ô  37 [chromium] ΓÇ║ tests\02-authentication.spec.ts:143:7 ΓÇ║ Authentication - Forgot Password Flow ΓÇ║ should navigate to forgot password page (820ms)
+  Γ£ô  38 [chromium] ΓÇ║ tests\02-authentication.spec.ts:149:7 ΓÇ║ Authentication - Forgot Password Flow ΓÇ║ should have email input for password reset (820ms)
+  Γ£ô  39 [chromium] ΓÇ║ tests\02-authentication.spec.ts:156:7 ΓÇ║ Authentication - Forgot Password Flow ΓÇ║ should validate email format for password reset (2.3s)
+  Γ£ô  40 [chromium] ΓÇ║ tests\02-authentication.spec.ts:168:7 ΓÇ║ Authentication - Forgot Password Flow ΓÇ║ should have back to login link (919ms)
+  Γ£ô  41 [chromium] ΓÇ║ tests\02-authentication.spec.ts:179:7 ΓÇ║ Authentication - Reset Password Flow ΓÇ║ should navigate to reset password page (1.6s)
+  Γ£ô  42 [chromium] ΓÇ║ tests\02-authentication.spec.ts:186:7 ΓÇ║ Authentication - Reset Password Flow ΓÇ║ should require token parameter (2.7s)
+  Γ£ÿ  43 [chromium] ΓÇ║ tests\02-authentication.spec.ts:195:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should display ProdiPlan branding (0ms)
+  Γ£ÿ  44 [chromium] ΓÇ║ tests\02-authentication.spec.ts:195:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should display ProdiPlan branding (retry #1) (0ms)
+  Γ£ÿ  45 [chromium] ΓÇ║ tests\02-authentication.spec.ts:195:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should display ProdiPlan branding (retry #2) (0ms)
+  Γ£ÿ  46 [chromium] ΓÇ║ tests\02-authentication.spec.ts:202:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should have smooth animations (0ms)
+  Γ£ÿ  47 [chromium] ΓÇ║ tests\02-authentication.spec.ts:202:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should have smooth animations (retry #1) (0ms)
+  Γ£ÿ  48 [chromium] ΓÇ║ tests\02-authentication.spec.ts:202:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should have smooth animations (retry #2) (0ms)
+  Γ£ÿ  49 [chromium] ΓÇ║ tests\02-authentication.spec.ts:217:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should be responsive on mobile (0ms)
+  Γ£ÿ  50 [chromium] ΓÇ║ tests\02-authentication.spec.ts:217:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should be responsive on mobile (retry #1) (0ms)
+  Γ£ÿ  51 [chromium] ΓÇ║ tests\02-authentication.spec.ts:217:7 ΓÇ║ Authentication - UI/UX Elements ΓÇ║ should be responsive on mobile (retry #2) (0ms)
+  Γ£ô  52 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:4:7 ΓÇ║ Dashboard - Protected Route Access ΓÇ║ should redirect to auth when not logged in (865ms)
+  Γ£ô  53 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:19:7 ΓÇ║ Dashboard - Navigation (with mock auth) ΓÇ║ should have dashboard navbar (692ms)
+  Γ£ô  54 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:28:7 ΓÇ║ Dashboard - Navigation (with mock auth) ΓÇ║ should display user menu (846ms)
+  Γ£ô  55 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:42:7 ΓÇ║ Dashboard - Navigation (with mock auth) ΓÇ║ should have navigation links (721ms)
+  Γ£ô  56 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:58:7 ΓÇ║ Dashboard - Main Content ΓÇ║ should display welcome message or header (1.1s)
+  Γ£ô  57 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:68:7 ΓÇ║ Dashboard - Main Content ΓÇ║ should have start assessment button (656ms)
+  Γ£ô  58 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:81:7 ΓÇ║ Dashboard - Main Content ΓÇ║ should navigate to essay grader (1.0s)
+  Γ£ô  59 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:95:7 ΓÇ║ Dashboard - Main Content ΓÇ║ should navigate to profile (721ms)
+  Γ£ô  60 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:111:7 ΓÇ║ Dashboard - Responsive Design ΓÇ║ should be responsive on mobile (2.6s)
+  Γ£ô  61 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:118:7 ΓÇ║ Dashboard - Responsive Design ΓÇ║ should be responsive on tablet (2.8s)
+  Γ£ô  62 [chromium] ΓÇ║ tests\03-dashboard.spec.ts:125:7 ΓÇ║ Dashboard - Responsive Design ΓÇ║ should be responsive on desktop (2.9s)
+  Γ£ô  63 [chromium] ΓÇ║ tests\04-profile.spec.ts:4:7 ΓÇ║ Profile - Protected Route Access ΓÇ║ should redirect to auth when not logged in (1.5s)
+  Γ£ô  64 [chromium] ΓÇ║ tests\04-profile.spec.ts:18:7 ΓÇ║ Profile - Enhanced Profile Page ΓÇ║ should display profile tabs (1.1s)
+  Γ£ô  65 [chromium] ΓÇ║ tests\04-profile.spec.ts:29:7 ΓÇ║ Profile - Enhanced Profile Page ΓÇ║ should have profile settings tab (816ms)
+  Γ£ô  66 [chromium] ΓÇ║ tests\04-profile.spec.ts:39:7 ΓÇ║ Profile - Enhanced Profile Page ΓÇ║ should have statistics tab (1.2s)
+  Γ£ô  67 [chromium] ΓÇ║ tests\04-profile.spec.ts:51:7 ΓÇ║ Profile - Enhanced Profile Page ΓÇ║ should have session history tab (903ms)
+  Γ£ô  68 [chromium] ΓÇ║ tests\04-profile.spec.ts:69:7 ΓÇ║ Profile - Profile Settings ΓÇ║ should display user information form (787ms)
+  Γ£ô  69 [chromium] ΓÇ║ tests\04-profile.spec.ts:79:7 ΓÇ║ Profile - Profile Settings ΓÇ║ should have email field (762ms)
+  Γ£ô  70 [chromium] ΓÇ║ tests\04-profile.spec.ts:89:7 ΓÇ║ Profile - Profile Settings ΓÇ║ should have save changes button (738ms)
+  Γ£ô  71 [chromium] ΓÇ║ tests\04-profile.spec.ts:102:7 ΓÇ║ Profile - Profile Settings ΓÇ║ should have delete account option (769ms)
+  Γ£ô  72 [chromium] ΓÇ║ tests\04-profile.spec.ts:118:7 ΓÇ║ Profile - Statistics Dashboard ΓÇ║ should switch to statistics tab (711ms)
+  Γ£ô  73 [chromium] ΓÇ║ tests\04-profile.spec.ts:129:7 ΓÇ║ Profile - Statistics Dashboard ΓÇ║ should display statistics cards (1.0s)
+  Γ£ô  74 [chromium] ΓÇ║ tests\04-profile.spec.ts:145:7 ΓÇ║ Profile - Statistics Dashboard ΓÇ║ should display charts or graphs (863ms)
+  Γ£ô  75 [chromium] ΓÇ║ tests\04-profile.spec.ts:167:7 ΓÇ║ Profile - Session History ΓÇ║ should switch to session history tab (980ms)
+  Γ£ô  76 [chromium] ΓÇ║ tests\04-profile.spec.ts:178:7 ΓÇ║ Profile - Session History ΓÇ║ should display session list or empty state (696ms)
+  Γ£ô  77 [chromium] ΓÇ║ tests\04-profile.spec.ts:194:7 ΓÇ║ Profile - Session History ΓÇ║ should have view result button for completed sessions (694ms)
+  Γ£ô  78 [chromium] ΓÇ║ tests\04-profile.spec.ts:215:7 ΓÇ║ Profile - Assessments Page ΓÇ║ should navigate to assessments page (3.0s)
+  Γ£ô  79 [chromium] ΓÇ║ tests\04-profile.spec.ts:221:7 ΓÇ║ Profile - Assessments Page ΓÇ║ should display assessment history (705ms)
+  Γ£ô  80 [chromium] ΓÇ║ tests\04-profile.spec.ts:236:7 ΓÇ║ Profile - Result Detail Page ΓÇ║ should handle result page with ID parameter (4.1s)
+  Γ£ô  81 [chromium] ΓÇ║ tests\04-profile.spec.ts:248:7 ΓÇ║ Profile - Responsive Design ΓÇ║ should be responsive on mobile (2.7s)
+  Γ£ô  82 [chromium] ΓÇ║ tests\04-profile.spec.ts:255:7 ΓÇ║ Profile - Responsive Design ΓÇ║ should be responsive on tablet (2.6s)
+  Γ£ô  83 [chromium] ΓÇ║ tests\05-essay-grader.spec.ts:4:7 ΓÇ║ Essay Grader - Protected Route Access ΓÇ║ should redirect to auth when not logged in (698ms)
+  Γ£ô  84 [chromium] ΓÇ║ tests\05-essay-grader.spec.ts:18:7 ΓÇ║ Essay Grader - Main Page ΓÇ║ should display grader interface (704ms)
+  Γ£ô  85 [chromium] ΓÇ║ tests\05-essay-grader.spec.ts:28:7 ΓÇ║ Essay Grader - Main Page ΓÇ║ should have major selection (665ms)
+  Γ£ô  86 [chromium] ΓÇ║ tests\05-essay-grader.spec.ts:38:7 ΓÇ║ Essay Grader - Main Page ΓÇ║ should have start session button (722ms)
+  Γ£ô  87 [chromium] ΓÇ║ tests\05-essay-grader.spec.ts:51:7 ΓÇ║ Essay Grader - Main Page ΓÇ║ should display question when session starts (701ms)
+  Γ£ô  88 [chromium] ΓÇ║ tests\05-essay-grader.spec.ts:74:7 ΓÇ║ Essay Grader - Confirmation Page ΓÇ║ should navigate to confirmation page (3.0s)

@@ -152,7 +152,7 @@ export default function EnhancedProfilePage() {
                       <ClockIcon className="w-6 h-6 text-blue-600" />
                       Riwayat Assessment
                     </h2>
-                    <SessionHistory limit={5} showFilters={false} />
+                    <SessionHistory limit={2} showFilters={false} />
                   </div>
                 </div>
               </motion.div>

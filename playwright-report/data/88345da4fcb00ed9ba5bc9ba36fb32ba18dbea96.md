@@ -1,0 +1,340 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e6]:
+        - link "ProdiPlan" [ref=e7]:
+          - /url: /
+          - img [ref=e10]
+          - generic [ref=e13]: ProdiPlan
+        - generic [ref=e15]:
+          - link "Login" [ref=e17]:
+            - /url: /auth
+          - button [ref=e18] [cursor=pointer]:
+            - img [ref=e19]
+      - generic [ref=e22]:
+        - link "Fitur" [ref=e24]:
+          - /url: "#features"
+          - generic [ref=e25]: Fitur
+        - link "Cara Kerja" [ref=e27]:
+          - /url: "#how-it-works"
+          - generic [ref=e28]: Cara Kerja
+        - link "Testimoni" [ref=e30]:
+          - /url: "#testimonials"
+          - generic [ref=e31]: Testimoni
+        - link "Login" [ref=e34]:
+          - /url: /auth
+    - main [ref=e35]:
+      - generic [ref=e41]:
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - text: Platform AI Generasi Terbaru
+          - heading "Uji Kesiapan Jurusan Kuliah Anda" [level=1] [ref=e47]
+          - paragraph [ref=e49]: Analisis mendalam berbasis AI mengungkap potensi tersembunyi Anda, memberikan rekomendasi jurusan yang sesuai, dan persiapan sukses masuk PTN.
+          - generic [ref=e50]:
+            - link "Mulai Gratis" [ref=e52]:
+              - /url: /auth
+              - generic [ref=e53]: Mulai Gratis
+              - img [ref=e54]
+            - button "Lihat Demo" [ref=e57] [cursor=pointer]:
+              - img [ref=e58]
+              - generic [ref=e60]: Lihat Demo
+          - generic [ref=e61]:
+            - generic [ref=e62]:
+              - img [ref=e63]
+              - generic [ref=e65]: Gratis untuk mencoba
+            - generic [ref=e66]:
+              - img [ref=e67]
+              - generic [ref=e69]: Tidak perlu kartu kredit
+            - generic [ref=e70]:
+              - img [ref=e71]
+              - generic [ref=e73]: Evaluasi mendalam
+        - generic [ref=e74]:
+          - generic [ref=e75]:
+            - img [ref=e77]
+            - heading "AI-Powered Analysis" [level=3] [ref=e79]
+            - paragraph [ref=e80]: Analisis mendalam dengan teknologi AI terkini
+          - generic [ref=e81]:
+            - img [ref=e83]
+            - heading "Expert Recommendations" [level=3] [ref=e85]
+            - paragraph [ref=e86]: Rekomendasi jurusan yang tepat untuk masa depan Anda
+          - generic [ref=e87]:
+            - img [ref=e89]
+            - heading "Real-time Feedback" [level=3] [ref=e91]
+            - paragraph [ref=e92]: Feedback langsung untuk kemajuan pembelajaran
+      - generic [ref=e94]:
+        - generic [ref=e95]:
+          - paragraph [ref=e96]: Fitur & Kemampuan
+          - heading "Layanan Lengkap untuk Kesuksesan Karir Anda" [level=2] [ref=e97]
+          - paragraph [ref=e98]: Teknologi AI terdepan memberikan analisis mendalam, rekomendasi personal, dan panduan persiapan untuk memilih jurusan yang tepat.
+        - generic [ref=e99]:
+          - generic [ref=e100]:
+            - img [ref=e102]
+            - heading "Analisis AI Mendalam" [level=3] [ref=e104]
+            - paragraph [ref=e105]: Teknologi Natural Language Processing menganalisis esai dengan akurasi tinggi untuk mengungkap kepribadian, minat, dan potensi Anda.
+          - generic [ref=e106]:
+            - img [ref=e108]
+            - heading "Rekomendasi Buku" [level=3] [ref=e110]
+            - paragraph [ref=e111]: Dapatkan rekomendasi buku yang dipersonalisasi lengkap dengan judul dan penulis berdasarkan minat dan profil akademik Anda.
+          - generic [ref=e112]:
+            - img [ref=e114]
+            - heading "Progress Tracking Real-time" [level=3] [ref=e116]
+            - paragraph [ref=e117]: Pantau perkembangan kesiapan Anda melalui dashboard interaktif dengan metrik yang mudah dipahami.
+          - generic [ref=e118]:
+            - img [ref=e120]
+            - heading "Keamanan Data Enterprise" [level=3] [ref=e122]
+            - paragraph [ref=e123]: Data pribadi Anda dilindungi dengan enkripsi tingkat militer dan mematuhi standar privasi internasional.
+          - generic [ref=e124]:
+            - img [ref=e126]
+            - heading "Evaluasi Mendalam & Akurat" [level=3] [ref=e128]
+            - paragraph [ref=e129]: Dapatkan analisis komprehensif dengan konfirmasi dari expert untuk hasil yang dapat diandalkan.
+          - generic [ref=e130]:
+            - img [ref=e132]
+            - heading "Laporan Detail & Lengkap" [level=3] [ref=e134]
+            - paragraph [ref=e135]: Analisis mendalam tentang kekuatan, area pengembangan, potensi sukses, dan strategi persiapan yang terukur.
+        - generic [ref=e137]:
+          - heading "Siap Menguji Jurusan Impianmu?" [level=3] [ref=e138]
+          - paragraph [ref=e139]: Bergabunglah dengan ribuan siswa yang telah menemukan jurusan kuliah yang tepat melalui platform kami.
+          - generic [ref=e140]:
+            - link "Mulai Gratis Sekarang" [ref=e142]:
+              - /url: /auth
+            - link "Pelajari Lebih Lanjut" [ref=e144]:
+              - /url: "#how-it-works"
+      - generic [ref=e146]:
+        - generic [ref=e147]:
+          - paragraph [ref=e148]: Proses Sederhana
+          - heading "Empat Langkah Menuju Keputusan Tepat" [level=2] [ref=e149]
+          - paragraph [ref=e150]: Dari pendaftaran hingga hasil analisis semuanya dirancang untuk membuat proses memilih jurusan semudah dan secepat mungkin.
+        - generic [ref=e152]:
+          - generic [ref=e153]:
+            - generic [ref=e155]: "1"
+            - img [ref=e157]
+            - heading "Daftar & Buat Profil" [level=3] [ref=e159]
+            - paragraph [ref=e160]: Buat akun gratis dan lengkapi profil dengan informasi pendidikan dan minat jurusan Anda.
+          - generic [ref=e161]:
+            - generic [ref=e163]: "2"
+            - img [ref=e165]
+            - heading "Tulis Esai" [level=3] [ref=e167]
+            - paragraph [ref=e168]: Jawab pertanyaan personal tentang jurusan impian Anda dengan gaya bahasa yang natural.
+          - generic [ref=e169]:
+            - generic [ref=e171]: "3"
+            - img [ref=e173]
+            - heading "AI Analysis" [level=3] [ref=e175]
+            - paragraph [ref=e176]: AI kami menganalisis esai Anda untuk memahami kepribadian, motivasi, dan kesiapan.
+          - generic [ref=e177]:
+            - generic [ref=e179]: "4"
+            - img [ref=e181]
+            - heading "Dapatkan Hasil" [level=3] [ref=e183]
+            - paragraph [ref=e184]: Terima laporan lengkap dengan rekomendasi jurusan dan saran untuk persiapan Anda.
+        - generic [ref=e186]:
+          - generic [ref=e187]:
+            - heading "Lihat Analisis AI dalam Aksi" [level=3] [ref=e188]
+            - paragraph [ref=e189]: "Platform kami menggunakan teknologi Natural Language Processing (NLP) dan machine learning untuk menganalisis esai Anda dengan kedalaman yang luar biasa. Setiap kata dan kalimat dievaluasi untuk memahami:"
+            - list [ref=e190]:
+              - listitem [ref=e191]:
+                - generic [ref=e193]: Motivasi dan minat terhadap jurusan
+              - listitem [ref=e194]:
+                - generic [ref=e196]: Kesiapan akademik dan pemahaman konsep
+              - listitem [ref=e197]:
+                - generic [ref=e199]: Kepribadian dan gaya belajar
+              - listitem [ref=e200]:
+                - generic [ref=e202]: Potensi kesuksesan di jurusan pilihan
+            - link "Coba Sekarang Gratis" [ref=e204]:
+              - /url: /auth
+          - generic [ref=e206]:
+            - img [ref=e208]
+            - heading "AI Analysis Engine" [level=4] [ref=e210]
+            - paragraph [ref=e211]: Teknologi terdepan untuk analisis esai yang akurat dan mendalam
+      - generic [ref=e213]:
+        - generic [ref=e214]:
+          - paragraph [ref=e215]: Kisah Nyata
+          - heading "Ribuan Siswa Telah Menemukan Jalur Sukses" [level=2] [ref=e216]
+          - paragraph [ref=e217]: Lihat bagaimana ProdiPlan membantu siswa membuat keputusan karir yang transformatif.
+        - generic [ref=e218]:
+          - generic [ref=e219]:
+            - generic [ref=e220]: 10,000+
+            - generic [ref=e221]: Siswa Terbantu
+            - generic [ref=e222]: Telah menemukan jurusan impian mereka
+          - generic [ref=e223]:
+            - generic [ref=e224]: 95%
+            - generic [ref=e225]: Tingkat Kepuasan
+            - generic [ref=e226]: Pengguna sangat puas dengan hasil analisis
+          - generic [ref=e227]:
+            - generic [ref=e228]: 85%
+            - generic [ref=e229]: Tingkat Keberhasilan
+            - generic [ref=e230]: Diterima di jurusan pilihan
+        - generic [ref=e231]:
+          - generic [ref=e233]:
+            - generic [ref=e235]:
+              - generic [ref=e236]: SP
+              - heading "Sarah Putri" [level=3] [ref=e237]
+              - paragraph [ref=e238]: Siswa SMA Kelas 12
+              - generic [ref=e239]:
+                - img [ref=e240]
+                - img [ref=e242]
+                - img [ref=e244]
+                - img [ref=e246]
+                - img [ref=e248]
+              - generic [ref=e250]:
+                - generic [ref=e251]:
+                  - img [ref=e252]
+                  - generic [ref=e254]: Computer Science
+                - generic [ref=e255]:
+                  - img [ref=e256]
+                  - generic [ref=e258]: Diterima di 3 PTN favorit
+            - generic [ref=e259]:
+              - blockquote [ref=e260]: "\"ProdiPlan membantu saya menemukan jurusan Computer Science yang ternyata sangat cocok dengan minat dan bakat saya. Analisis AI-nya sangat akurat!\""
+              - paragraph [ref=e262]: SMAN 3 Jakarta
+          - button "Previous testimonial" [ref=e263] [cursor=pointer]:
+            - img [ref=e264]
+          - button "Next testimonial" [ref=e266] [cursor=pointer]:
+            - img [ref=e267]
+          - generic [ref=e269]:
+            - button "Go to testimonial 1" [ref=e270] [cursor=pointer]
+            - button "Go to testimonial 2" [ref=e271] [cursor=pointer]
+            - button "Go to testimonial 3" [ref=e272] [cursor=pointer]
+            - button "Go to testimonial 4" [ref=e273] [cursor=pointer]
+        - generic [ref=e274]:
+          - generic [ref=e275]:
+            - heading "Bergabunglah dengan Kisah Sukses Mereka" [level=3] [ref=e276]
+            - paragraph [ref=e277]: Mulai perjalanan Anda menemukan jurusan kuliah yang tepat hari ini.
+          - link "Mulai Analisis Gratis" [ref=e278]:
+            - /url: /auth
+      - generic [ref=e285]:
+        - generic [ref=e286]:
+          - img [ref=e287]
+          - text: Penawaran Terbatas
+        - heading "Waktunya Memilih Jurusan yang Tepat" [level=2] [ref=e289]
+        - paragraph [ref=e290]: Bergabunglah dengan ribuan siswa yang telah menemukan jurusan kuliah yang sesuai dengan potensi mereka—dan mencapai kesuksesan akademik.
+        - generic [ref=e291]:
+          - link "Mulai Gratis Sekarang" [ref=e293]:
+            - /url: /auth
+            - generic [ref=e294]: Mulai Gratis Sekarang
+            - img [ref=e295]
+          - link "Lihat Demo" [ref=e298]:
+            - /url: /demo
+        - generic [ref=e299]:
+          - generic [ref=e300]:
+            - generic [ref=e301]: 100%
+            - generic [ref=e302]: Gratis untuk Coba
+          - generic [ref=e303]:
+            - generic [ref=e304]: 24/7
+            - generic [ref=e305]: Support Online
+          - generic [ref=e306]:
+            - generic [ref=e307]: 5min
+            - generic [ref=e308]: Evaluasi Akurat
+          - generic [ref=e309]:
+            - generic [ref=e310]: 10K+
+            - generic [ref=e311]: Pengguna Aktif
+    - contentinfo [ref=e312]:
+      - generic [ref=e313]:
+        - generic [ref=e314]:
+          - generic [ref=e316]:
+            - link "ProdiPlan" [ref=e317]:
+              - /url: /
+              - img [ref=e318]
+              - generic [ref=e320]: ProdiPlan
+            - paragraph [ref=e321]: Platform AI-powered untuk membantu siswa menemukan jurusan kuliah yang tepat dan meraih kesuksesan akademik mereka.
+            - generic [ref=e322]:
+              - generic [ref=e323]:
+                - img [ref=e324]
+                - generic [ref=e326]: info@prodiplan.id
+              - generic [ref=e327]:
+                - img [ref=e328]
+                - generic [ref=e330]: +62 21 1234 5678
+              - generic [ref=e331]:
+                - img [ref=e332]
+                - generic [ref=e335]: Jakarta, Indonesia
+          - generic [ref=e336]:
+            - heading "Produk" [level=3] [ref=e337]
+            - list [ref=e338]:
+              - listitem [ref=e339]:
+                - link "Fitur" [ref=e340]:
+                  - /url: "#features"
+              - listitem [ref=e341]:
+                - link "Cara Kerja" [ref=e342]:
+                  - /url: "#how-it-works"
+              - listitem [ref=e343]:
+                - link "Harga" [ref=e344]:
+                  - /url: /pricing
+              - listitem [ref=e345]:
+                - link "Demo" [ref=e346]:
+                  - /url: /demo
+          - generic [ref=e347]:
+            - heading "Perusahaan" [level=3] [ref=e348]
+            - list [ref=e349]:
+              - listitem [ref=e350]:
+                - link "Tentang Kami" [ref=e351]:
+                  - /url: /about
+              - listitem [ref=e352]:
+                - link "Karir" [ref=e353]:
+                  - /url: /careers
+              - listitem [ref=e354]:
+                - link "Blog" [ref=e355]:
+                  - /url: /blog
+              - listitem [ref=e356]:
+                - link "Press" [ref=e357]:
+                  - /url: /press
+          - generic [ref=e358]:
+            - heading "Dukungan" [level=3] [ref=e359]
+            - list [ref=e360]:
+              - listitem [ref=e361]:
+                - link "Bantuan" [ref=e362]:
+                  - /url: /help
+              - listitem [ref=e363]:
+                - link "FAQ" [ref=e364]:
+                  - /url: /faq
+              - listitem [ref=e365]:
+                - link "Kontak" [ref=e366]:
+                  - /url: /contact
+              - listitem [ref=e367]:
+                - link "Status" [ref=e368]:
+                  - /url: /status
+          - generic [ref=e369]:
+            - heading "Legal" [level=3] [ref=e370]
+            - list [ref=e371]:
+              - listitem [ref=e372]:
+                - link "Privacy Policy" [ref=e373]:
+                  - /url: /privacy
+              - listitem [ref=e374]:
+                - link "Terms of Service" [ref=e375]:
+                  - /url: /terms
+              - listitem [ref=e376]:
+                - link "Cookie Policy" [ref=e377]:
+                  - /url: /cookies
+              - listitem [ref=e378]:
+                - link "GDPR" [ref=e379]:
+                  - /url: /gdpr
+        - generic [ref=e381]:
+          - generic [ref=e382]:
+            - heading "Tetap Update dengan ProdiPlan" [level=3] [ref=e383]
+            - paragraph [ref=e384]: Dapatkan tips, update, dan penawaran eksklusif langsung di inbox Anda.
+          - generic [ref=e385]:
+            - textbox "Email Anda" [ref=e386]
+            - button "Subscribe" [ref=e387] [cursor=pointer]
+      - generic [ref=e390]:
+        - generic [ref=e391]: © 2024 ProdiPlan. All rights reserved.
+        - generic [ref=e392]:
+          - link "Facebook" [ref=e393]:
+            - /url: https://facebook.com
+            - img [ref=e394]
+          - link "GitHub" [ref=e396]:
+            - /url: https://github.com
+            - img [ref=e397]
+          - link "Email" [ref=e399]:
+            - /url: mailto:info@prodiplan.id
+            - img [ref=e400]
+          - link "LinkedIn" [ref=e402]:
+            - /url: https://linkedin.com
+            - img [ref=e403]
+  - button "Open Next.js Dev Tools" [ref=e410] [cursor=pointer]:
+    - generic [ref=e413]:
+      - text: Compiling
+      - generic [ref=e414]:
+        - generic [ref=e415]: .
+        - generic [ref=e416]: .
+        - generic [ref=e417]: .
+```

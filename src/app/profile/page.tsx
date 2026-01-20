@@ -424,7 +424,7 @@ export default function ProfilePage() {
                     </div>
                   ) : (
                     <div className="space-y-2 w-full">
-                      {assessments.slice(0, 5).map((assessment) => (
+                      {assessments.slice(0, 2).map((assessment) => (
                         <div key={assessment.id}>
                           {assessment.status === "completed" ? (
                             <Link href={`/profile/result/${assessment.id}`}>
@@ -533,10 +533,10 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="space-y-3">
-                  {assessments.length >= 1 && (
+                  {assessments.length > 2 && (
                     <Link href="/profile/assessments">
-                      <button className="w-full py-2 text-primary-600 font-medium text-sm hover:text-primary-700 transition-colors border-t border-gray-200 pt-3">
-                        Show All ({assessments.length})
+                      <button className="w-full py-2.5 px-4 text-primary-600 bg-primary-50 hover:bg-primary-100 font-medium text-sm rounded-lg transition-colors">
+                        Lihat Semua Riwayat ({assessments.length})
                       </button>
                     </Link>
                   )}

@@ -79,8 +79,8 @@ test.describe('Authentication - Register Flow', () => {
     
     await page.waitForTimeout(500);
     
-    // Should show register form fields
-    await expect(page.getByPlaceholder(/nama lengkap|full name/i).first()).toBeVisible({ timeout: 5000 });
+    // Should show register form fields (placeholder: "John Doe")
+    await expect(page.getByPlaceholder(/john doe|nama lengkap|full name/i).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('should display all required register fields', async ({ page }) => {
@@ -89,11 +89,11 @@ test.describe('Authentication - Register Flow', () => {
     
     await page.waitForTimeout(500);
     
-    // Check for required fields
-    const fullNameInput = page.getByPlaceholder(/nama lengkap|full name/i).first();
+    // Check for required fields (placeholder: "John Doe" and "nama@email.com")
+    const fullNameInput = page.getByPlaceholder(/john doe|nama lengkap|full name/i).first();
     await expect(fullNameInput).toBeVisible({ timeout: 5000 });
     
-    const emailInput = page.getByPlaceholder(/email/i).first();
+    const emailInput = page.getByPlaceholder(/nama@email|email/i).first();
     await expect(emailInput).toBeVisible();
   });
 
@@ -103,9 +103,9 @@ test.describe('Authentication - Register Flow', () => {
     
     await page.waitForTimeout(500);
     
-    // Fill in form with mismatched passwords
-    await page.getByPlaceholder(/nama lengkap|full name/i).first().fill('Test User');
-    await page.getByPlaceholder(/email/i).first().fill('testuser@example.com');
+    // Fill in form with mismatched passwords (placeholder: "John Doe" and "nama@email.com")
+    await page.getByPlaceholder(/john doe/i).first().fill('Test User');
+    await page.getByPlaceholder(/nama@email/i).first().fill('testuser@example.com');
     
     const passwordInputs = page.getByPlaceholder(/password|kata sandi/i);
     if (await passwordInputs.count() >= 2) {
