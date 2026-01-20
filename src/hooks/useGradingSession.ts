@@ -156,12 +156,12 @@ export function useGradingResult(sessionId?: string) {
     enabled: !!token && !!sessionId,
     retry: 3, // Retry up to 3 times if data is not ready
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff: 1s, 2s, 4s
-    refetchInterval: (data) => {
+    refetchInterval: (query) => {
       // Keep refetching every 5 seconds if:
       // 1. Data is not available yet, OR
       // 2. Verification status is still pending
-      if (!data) return 2000; // Check every 2s if no data yet
-      if (data.verification_status === "pending") return 5000; // Check every 5s if pending
+      if (!query.state.data) return 2000; // Check every 2s if no data yet
+      if (query.state.data.verification_status === "pending") return 5000; // Check every 5s if pending
       return false; // Stop refetching if approved or rejected
     },
     refetchOnMount: true,
