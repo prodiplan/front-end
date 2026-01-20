@@ -111,7 +111,7 @@ export default function ConfirmationPage() {
                 transition={{ duration: 0.6, delay: 0.3 }}
                 className="text-xl sm:text-2xl font-bold text-white mb-1"
               >
-                Assesment Berhasil Dikirim! ✨
+                Sesi Berhasil Diselesaikan! ✨
               </motion.h1>
 
               <motion.p
@@ -120,7 +120,7 @@ export default function ConfirmationPage() {
                 transition={{ duration: 0.6, delay: 0.4 }}
                 className="text-white text-opacity-90 text-xs sm:text-sm"
               >
-                Terima kasih telah menyelesaikan essai Anda
+                Hasil sedang diverifikasi oleh admin
               </motion.p>
             </div>
 
@@ -135,30 +135,30 @@ export default function ConfirmationPage() {
                   className="text-center"
                 >
                   <p className="text-neutral-700 text-xs sm:text-sm mb-3 leading-relaxed">
-                    Jawaban Anda telah kami terima dan sedang dianalisis oleh
-                    sistem AI kami dengan teknologi terkini.
+                    Jawaban Anda telah kami terima dan sedang menunggu
+                    verifikasi dari admin. Hasil akan tersedia setelah proses
+                    verifikasi selesai.
                   </p>
 
-                  <div className="bg-primary-50 border border-primary-200 rounded-lg p-3 sm:p-4 mb-3">
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 sm:p-4 mb-3">
                     <div className="flex items-start space-x-2 sm:space-x-3">
                       <div className="flex-shrink-0 mt-0.5">
-                        <ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-primary-600" />
+                        <ClockIcon className="w-4 h-4 sm:w-5 sm:h-5 text-amber-600" />
                       </div>
                       <div className="text-left">
                         <h3 className="font-semibold text-neutral-900 text-xs sm:text-sm mb-1">
-                          Waktu Analisis: 2-24 Jam
+                          Hasil Sedang Diverifikasi
                         </h3>
                         <p className="text-neutral-600 text-xs">
-                          Hasil analisis biasanya siap dalam beberapa jam.
-                          Laporan komprehensif akan membantu Anda memahami
-                          kesiapan akademik.
+                          Admin kami sedang memverifikasi hasil analisis Anda.
+                        
                         </p>
                       </div>
                     </div>
                   </div>
 
                   <p className="text-neutral-600 text-xs sm:text-sm">
-                    Cek status di halaman
+                    Anda dapat melihat status verifikasi di halaman
                     <span className="font-semibold text-primary-600">
                       {" "}
                       Profil Anda
@@ -173,29 +173,29 @@ export default function ConfirmationPage() {
                   transition={{ duration: 0.6, delay: 0.6 }}
                 >
                   <h3 className="text-sm font-semibold text-neutral-900 mb-3">
-                    Apa yang Terjadi Selanjutnya?
+                    Proses Selanjutnya
                   </h3>
                   <div className="space-y-3">
                     {[
                       {
                         step: "1",
-                        title: "Analisis AI",
+                        title: "Analisis Sistem",
                         desc: "Sistem menganalisis jawaban Anda",
                       },
                       {
                         step: "2",
-                        title: "Perhitungan Skor",
-                        desc: "Menghitung skor kesiapan",
+                        title: "Verifikasi Admin",
+                        desc: "Admin memverifikasi hasil analisis",
                       },
                       {
                         step: "3",
-                        title: "Pembuatan Laporan",
-                        desc: "Membuat laporan komprehensif",
+                        title: "Persetujuan",
+                        desc: "Hasil disetujui dan difinalisasi",
                       },
                       {
                         step: "4",
                         title: "Notifikasi",
-                        desc: "Anda akan diberitahu",
+                        desc: "Anda akan diberitahu saat selesai",
                       },
                     ].map((item, index) => (
                       <motion.div
@@ -233,17 +233,17 @@ export default function ConfirmationPage() {
                 className="flex flex-col sm:flex-row gap-3 mt-6 flex-shrink-0"
               >
                 <Link
-                  href="/profile"
+                  href="/profile/enhanced"
                   className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 py-2 flex items-center justify-center space-x-1 text-center text-xs sm:text-sm"
                 >
-                  <span>Ke Profil Saya</span>
+                  <span>Kembali ke Profil</span>
                   <ArrowRightIcon className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   href="/dashboard"
                   className="flex-1 btn btn-secondary btn-sm sm:btn-md px-4 py-2 text-center text-xs sm:text-sm"
                 >
-                  Kembali ke Dashboard
+                  Ke Dashboard
                 </Link>
               </motion.div>
 
@@ -255,7 +255,8 @@ export default function ConfirmationPage() {
                 className="mt-6 pt-4 border-t border-neutral-200 text-center flex-shrink-0"
               >
                 <p className="text-neutral-500 text-xs">
-                  💡 Jelajahi platform kami sambil menunggu hasil
+                  💡 Periksa halaman profil Anda secara berkala untuk melihat
+                  status verifikasi
                 </p>
               </motion.div>
             </div>

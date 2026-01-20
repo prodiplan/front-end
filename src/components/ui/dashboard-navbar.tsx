@@ -56,10 +56,10 @@ export function DashboardNavBar({
         const scrollPosition = window.scrollY + 200; // Increased offset for better accuracy
 
         const howItWorksElement = document.querySelector(
-          "#how-it-works"
+          "#how-it-works",
         ) as HTMLElement | null;
         const featureElement = document.querySelector(
-          "#features"
+          "#features",
         ) as HTMLElement | null;
 
         if (
@@ -263,7 +263,7 @@ export function DashboardNavBar({
                         "relative z-10 cursor-pointer text-xs sm:text-sm font-semibold px-5 sm:px-8 py-3 rounded-full transition-all duration-300 ease-out",
                         isActive
                           ? "text-white"
-                          : "text-gray-600 hover:text-gray-900"
+                          : "text-gray-600 hover:text-gray-900",
                       )}
                     >
                       <span className="hidden lg:inline">{item.name}</span>
@@ -318,7 +318,7 @@ export function DashboardNavBar({
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <Link
-                        href="/profile"
+                        href="/profile/enhanced"
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-all duration-200 text-sm"
                       >
                         Profile
@@ -359,7 +359,7 @@ export function DashboardNavBar({
                         </p>
                       </div>
                       <Link
-                        href="/profile"
+                        href="/profile/enhanced"
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
                       >
                         Profile
@@ -458,7 +458,7 @@ export function DashboardNavBar({
                     "block px-2 sm:px-4 py-2 sm:py-3 rounded-lg transition-all duration-200 text-xs sm:text-base",
                     isActive
                       ? "bg-gradient-to-r from-blue-100 to-blue-50 text-blue-900 font-semibold"
-                      : "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-700 hover:bg-gray-100",
                   )}
                 >
                   <span className="line-clamp-1">{item.name}</span>

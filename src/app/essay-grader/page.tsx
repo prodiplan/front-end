@@ -10,7 +10,9 @@ import {
   ExclamationTriangleIcon,
   ChevronDownIcon,
   MicrophoneIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
+import toast from "react-hot-toast";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import { MAJORS } from "@/data/schoolsAndMajors";
 import { useAuth, User } from "@/components/providers/auth-provider";
@@ -31,7 +33,6 @@ import {
   onQuestion,
   onError,
   disconnectSocket,
-
 } from "@/lib/websocket";
 import { Socket } from "socket.io-client";
 import { GradingSession } from "@/types";
@@ -50,33 +51,59 @@ function EssayGraderContent() {
   const resumeSessionId = searchParams.get("session");
 
   const [currentStep, setCurrentStep] = useState<"intro" | "test" | "loading">(
-    "intro"
+    "intro",
   );
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<{ [key: string]: string }>({});
+  const [submittedQuestions, setSubmittedQuestions] = useState<Set<string>>(
+    new Set(),
+  ); // Track which questions have been submitted
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [currentScore, setCurrentScore] = useState(0);
   const [isWaitingForQuestion, setIsWaitingForQuestion] = useState(false);
   const [activeSession, setActiveSession] = useState<GradingSession | null>(
-    null
+    null,
   );
   const [showActiveSessionPopup, setShowActiveSessionPopup] = useState(false);
   const [selectedMajor, setSelectedMajor] = useState<string>(
-    user?.dream_major || ""
+    user?.dream_major || "",
   );
   const [showFunFactAnimation, setShowFunFactAnimation] = useState(false);
-  const [isCheckingActiveSessions, setIsCheckingActiveSessions] = useState(true);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const createSessionMutation = useCreateSession();
   const completeSessionMutation = useCompleteSession();
   const sendMessageMutation = useSendMessage();
   const [sessionId, setSessionId] = useState<string | null>(null);
+
+  // Handle delete session
+  const handleDeleteSession = async () => {
+    if (!activeSession || !token) return;
+
+    setIsDeleting(true);
+    try {
+      await gradingService.deleteSession(activeSession.id, token);
+      toast.success("Session berhasil dihapus");
+      setShowDeleteConfirm(false);
+      setActiveSession(null);
+      setShowActiveSessionPopup(false);
+      // Reload sessions data
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus session");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
   const socketRef = useRef<Socket | null>(null);
   const [socketConnected, setSocketConnected] = useState(false);
   const questionsRef = useRef<Question[]>([]);
   const answersRef = useRef<{ [key: string]: string }>({});
+  const submittedQuestionsRef = useRef<Set<string>>(new Set());
   const currentQuestionIndexRef = useRef<number>(0);
   const isCreatingSession = useRef(false); // Guard against double creation
 
@@ -89,7 +116,6 @@ function EssayGraderContent() {
   // Check for active session on mount
   useEffect(() => {
     const checkActiveSessions = async () => {
-      setIsCheckingActiveSessions(true);
       if (sessionsData?.sessions && sessionsData.sessions.length > 0 && token) {
         // Find first active session that hasn't expired and doesn't have results
         for (const session of sessionsData.sessions) {
@@ -102,20 +128,30 @@ function EssayGraderContent() {
 
           // Check if this session has a grading result
           try {
-            const resultResponse = await gradingService.getResult(session.id, token);
+            const resultResponse = await gradingService.getResult(
+              session.id,
+              token,
+            );
 
             // If we successfully get a result, this session is actually complete
             // so we should NOT show it as an active incomplete session
             if (resultResponse.data) {
-              console.log("📊 Session", session.id, "has result, skipping as active session");
+              console.log(
+                "📊 Session",
+                session.id,
+                "has result, skipping as active session",
+              );
               continue;
             }
           } catch (error) {
             // If we get an error (likely 404), it means no result exists yet
             // This is a truly incomplete active session
-            console.log("⚠️ Session", session.id, "has no result, marking as active");
+            console.log(
+              "⚠️ Session",
+              session.id,
+              "has no result, marking as active",
+            );
             setActiveSession(session);
-            setIsCheckingActiveSessions(false);
             return; // Found an active incomplete session, stop searching
           }
         }
@@ -123,7 +159,6 @@ function EssayGraderContent() {
         // If we reach here, no active incomplete sessions found
         setActiveSession(null);
       }
-      setIsCheckingActiveSessions(false);
     };
 
     checkActiveSessions();
@@ -200,7 +235,7 @@ function EssayGraderContent() {
             const result = await gradingService.getMessages(
               sessionId,
               { limit: 50 },
-              token
+              token,
             );
 
             console.log("📥 Fetched messages from API:", result);
@@ -208,7 +243,7 @@ function EssayGraderContent() {
             // Find questions from the messages
             const questionMessages =
               result.data?.messages?.filter(
-                (m) => m.message_type === "question"
+                (m) => m.message_type === "question",
               ) || [];
 
             if (questionMessages.length > 0) {
@@ -224,7 +259,7 @@ function EssayGraderContent() {
               setIsWaitingForQuestion(false);
             } else {
               console.log(
-                "⚠️ No questions found in messages, waiting for WebSocket..."
+                "⚠️ No questions found in messages, waiting for WebSocket...",
               );
             }
           } catch (error) {
@@ -239,8 +274,10 @@ function EssayGraderContent() {
 
         // Normalize data keys (handle potential case variants)
         const score = data.score;
-        const isComplete = data.isComplete || data.is_complete || data.session_completed;
-        const nextQuestionContent = data.nextQuestion || data.next_question || data.question;
+        const isComplete =
+          data.isComplete || data.is_complete || data.session_completed;
+        const nextQuestionContent =
+          data.nextQuestion || data.next_question || data.question;
 
         // Update score
         if (score !== undefined) {
@@ -251,22 +288,24 @@ function EssayGraderContent() {
         if (isComplete) {
           console.log("🎉 Session completed via grading_result");
           setCurrentStep("loading");
-          // Wait for backend to finish processing final result
-          await new Promise((resolve) => setTimeout(resolve, 5000));
-          router.push(`/profile/result/${sessionId}`);
+          // Redirect to confirmation page while admin verifies
+          router.push("/essay-grader/confirmation");
           return;
         }
 
         // Handle Next Question
         if (nextQuestionContent) {
-          console.log("📝 Next question received via grading_result:", nextQuestionContent);
+          console.log(
+            "📝 Next question received via grading_result:",
+            nextQuestionContent,
+          );
 
           const newQuestionId = `manual-q-${Date.now()}`;
 
           setQuestions((prev) => {
             // Check if this question content already exists to avoid dupes
             // We check both ID (if available in some form) and Content
-            const exists = prev.some(q => q.question === nextQuestionContent);
+            const exists = prev.some((q) => q.question === nextQuestionContent);
             if (exists) {
               console.log("⚠️ Question already exists, skipping addition.");
               return prev;
@@ -285,7 +324,9 @@ function EssayGraderContent() {
 
           // Note: State updates for index and loading are handled by the useEffect watching questions.length
         } else {
-          console.log("⚠️ Grading result received but 'nextQuestion' is missing or empty.");
+          console.log(
+            "⚠️ Grading result received but 'nextQuestion' is missing or empty.",
+          );
         }
       });
 
@@ -295,8 +336,12 @@ function EssayGraderContent() {
 
         setQuestions((prev) => {
           // Check if already exists by ID OR Content (to avoid dupe with grading_result)
-          if (prev.some(q => q.id === data.id || q.question === data.content)) {
-            console.log("⚠️ Question already exists (via ID or content), skipping addition.");
+          if (
+            prev.some((q) => q.id === data.id || q.question === data.content)
+          ) {
+            console.log(
+              "⚠️ Question already exists (via ID or content), skipping addition.",
+            );
             return prev;
           }
 
@@ -318,9 +363,8 @@ function EssayGraderContent() {
       onSessionCompleted(socket, async (data) => {
         console.log("🎉 Session completed:", data);
         setCurrentStep("loading");
-        // Wait for backend to finish processing final result
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        router.push(`/profile/result/${data.session_id}`);
+        // Redirect to confirmation page while admin verifies
+        router.push("/essay-grader/confirmation");
       });
 
       // Listen for errors
@@ -345,7 +389,10 @@ function EssayGraderContent() {
       // Only jump if we were specifically waiting for a question
       // OR if it's the very first question arriving
       if (isWaitingForQuestion || prevQuestionsLength.current === 0) {
-        console.log("📝 New question arrived, advancing index to:", questions.length - 1);
+        console.log(
+          "📝 New question arrived, advancing index to:",
+          questions.length - 1,
+        );
         setCurrentQuestionIndex(questions.length - 1);
         setIsWaitingForQuestion(false);
         setShowFunFactAnimation(false); // Hide fun fact animation
@@ -369,6 +416,30 @@ function EssayGraderContent() {
   const handleNext = async () => {
     const currentQuestion = questions[currentQuestionIndex];
     const answer = answers[currentQuestion?.id] || "";
+    const isAlreadySubmitted = submittedQuestions.has(currentQuestion?.id);
+    const isLastQuestion = currentQuestionIndex === questions.length - 1;
+
+    // If question is already submitted
+    if (isAlreadySubmitted) {
+      // If this is the last question, allow re-submission (retry)
+      if (isLastQuestion) {
+        console.log("🔄 Allowing re-submission of last question - RETRY mode");
+        // Remove from submitted questions to allow re-submission
+        setSubmittedQuestions((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(currentQuestion.id);
+          return newSet;
+        });
+        submittedQuestionsRef.current.delete(currentQuestion.id);
+        // Continue to submission logic below
+      } else {
+        // Navigate to next question if available (not last question)
+        if (currentQuestionIndex < questions.length - 1) {
+          setCurrentQuestionIndex(currentQuestionIndex + 1);
+        }
+        return;
+      }
+    }
 
     if (!currentQuestion || !answer.trim()) {
       alert("Silakan isi jawaban terlebih dahulu");
@@ -377,7 +448,7 @@ function EssayGraderContent() {
 
     if (answer.trim().length < MIN_ANSWER_LENGTH) {
       alert(
-        `Jawaban minimal ${MIN_ANSWER_LENGTH} karakter. Saat ini: ${answer.trim().length} karakter`
+        `Jawaban minimal ${MIN_ANSWER_LENGTH} karakter. Saat ini: ${answer.trim().length} karakter`,
       );
       return;
     }
@@ -404,6 +475,10 @@ function EssayGraderContent() {
       console.log("✅ Answer sent successfully:", response);
       console.log("⏳ Waiting for next question via WebSocket...");
 
+      // Mark this question as submitted
+      setSubmittedQuestions((prev) => new Set(prev).add(currentQuestion.id));
+      submittedQuestionsRef.current.add(currentQuestion.id);
+
       // Update score if provided
       if (response.data.score !== undefined) {
         setCurrentScore((prev) => prev + response.data.score!);
@@ -414,19 +489,21 @@ function EssayGraderContent() {
         console.log("🎉 Session completed automatically!");
         setShowFunFactAnimation(false);
         setCurrentStep("loading");
-        // Wait for backend to finish processing final result
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        router.push(`/profile/result/${sessionId}`);
+        // Redirect to confirmation page while admin verifies
+        router.push("/essay-grader/confirmation");
         return;
       }
 
       // Note: We now rely entirely on WebSocket for next question
       // No polling, just waiting for WebSocket events
-    } catch (error) {
+    } catch (error: any) {
       console.error("❌ Error sending answer:", error);
-      alert(
-        `Error: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
+      const errorMsg =
+        error?.response?.data?.error ||
+        error?.message ||
+        "Terjadi kesalahan saat mengirim jawaban";
+      setErrorMessage(errorMsg);
+      toast.error(errorMsg);
       setIsWaitingForQuestion(false);
       setShowFunFactAnimation(false);
     }
@@ -442,7 +519,7 @@ function EssayGraderContent() {
 
       timeoutId = setTimeout(() => {
         console.warn(
-          "⚠️ Question taking longer than expected. Check WebSocket connection or backend processing."
+          "⚠️ Question taking longer than expected. Check WebSocket connection or backend processing.",
         );
         // You could optionally show a UI message to the user here
       }, 15000); // 15 seconds
@@ -473,7 +550,7 @@ function EssayGraderContent() {
       // Get session details
       const sessionResponse = await gradingService.getSession(
         existingSessionId,
-        token
+        token,
       );
       const session = sessionResponse.data;
 
@@ -490,7 +567,7 @@ function EssayGraderContent() {
       const now = new Date().getTime();
       const remainingSeconds = Math.max(
         0,
-        Math.floor((expiresAt - now) / 1000)
+        Math.floor((expiresAt - now) / 1000),
       );
 
       setSessionId(existingSessionId);
@@ -502,7 +579,7 @@ function EssayGraderContent() {
       const messagesResponse = await gradingService.getMessages(
         existingSessionId,
         { limit: 100 },
-        token
+        token,
       );
 
       const messages = messagesResponse.data?.messages || [];
@@ -510,10 +587,10 @@ function EssayGraderContent() {
 
       // Separate questions and answers
       const questionMessages = messages.filter(
-        (m) => m.message_type === "question"
+        (m) => m.message_type === "question",
       );
       const answerMessages = messages.filter(
-        (m) => m.message_type === "answer"
+        (m) => m.message_type === "answer",
       );
 
       // Map questions
@@ -526,19 +603,24 @@ function EssayGraderContent() {
 
       // Build answers map (match answers to questions by order)
       const answersMap: { [key: string]: string } = {};
+      const submittedIds = new Set<string>();
       answerMessages.forEach((answer, index) => {
         if (questionMessages[index]) {
           answersMap[questionMessages[index].id] = answer.content;
+          // Mark this question as submitted since it has an answer
+          submittedIds.add(questionMessages[index].id);
         }
       });
 
       if (mappedQuestions.length > 0) {
         setQuestions(mappedQuestions);
         setAnswers(answersMap);
+        setSubmittedQuestions(submittedIds);
+        submittedQuestionsRef.current = submittedIds;
         // Set to the last unanswered question or the latest question
         const lastAnsweredIndex = Math.min(
           answerMessages.length,
-          mappedQuestions.length - 1
+          mappedQuestions.length - 1,
         );
         setCurrentQuestionIndex(lastAnsweredIndex);
         setIsWaitingForQuestion(false);
@@ -590,10 +672,14 @@ function EssayGraderContent() {
       setIsWaitingForQuestion(true);
 
       // Check if questions array is provided in the response (matches new AI-driven flow)
-      if (response.data.questions && Array.isArray(response.data.questions) && response.data.questions.length > 0) {
+      if (
+        response.data.questions &&
+        Array.isArray(response.data.questions) &&
+        response.data.questions.length > 0
+      ) {
         console.log(
           "📝 Questions received in session creation response:",
-          response.data.questions
+          response.data.questions,
         );
 
         const mappedQuestions = response.data.questions.map((q: any) => ({
@@ -606,7 +692,9 @@ function EssayGraderContent() {
         setQuestions(mappedQuestions);
         setCurrentQuestionIndex(0);
         setIsWaitingForQuestion(false);
-        console.log(`✅ Loaded ${mappedQuestions.length} questions successfully!`);
+        console.log(
+          `✅ Loaded ${mappedQuestions.length} questions successfully!`,
+        );
         return;
       }
 
@@ -614,7 +702,7 @@ function EssayGraderContent() {
       if (response.data.first_question) {
         console.log(
           "📝 First question received in session creation response:",
-          response.data.first_question
+          response.data.first_question,
         );
         setQuestions([
           {
@@ -632,7 +720,7 @@ function EssayGraderContent() {
 
       console.warn(
         "⚠️ first_question not in response. Available keys:",
-        Object.keys(response.data)
+        Object.keys(response.data),
       );
       console.log("⏳ Waiting for first question via WebSocket or polling...");
 
@@ -650,30 +738,30 @@ function EssayGraderContent() {
   const fetchFirstQuestion = async (
     sessionId: string,
     authToken: string,
-    retries: number
+    retries: number,
   ) => {
     for (let attempt = 1; attempt <= retries; attempt++) {
       console.log(
-        `🔄 Attempting to fetch first question (attempt ${attempt}/${retries})...`
+        `🔄 Attempting to fetch first question (attempt ${attempt}/${retries})...`,
       );
 
       // Wait a bit before trying (backend might need time to generate question)
       await new Promise((resolve) =>
-        setTimeout(resolve, attempt === 1 ? 1000 : 2000)
+        setTimeout(resolve, attempt === 1 ? 1000 : 2000),
       );
 
       try {
         const messagesResponse = await gradingService.getMessages(
           sessionId,
           { limit: 50 },
-          authToken
+          authToken,
         );
 
         console.log("📥 Fetched messages:", messagesResponse);
 
         const questionMessages =
           messagesResponse.data?.messages?.filter(
-            (m) => m.message_type === "question"
+            (m) => m.message_type === "question",
           ) || [];
 
         if (questionMessages.length > 0) {
@@ -725,24 +813,24 @@ function EssayGraderContent() {
     if (!isAutoSubmit) {
       // Check for unanswered questions
       const unansweredQuestions = questions.filter(
-        (q) => !answers[q.id] || answers[q.id].trim().length === 0
+        (q) => !answers[q.id] || answers[q.id].trim().length === 0,
       );
 
       if (unansweredQuestions.length > 0) {
         alert(
-          `Masih ada ${unansweredQuestions.length} soal yang belum dijawab. Silakan lengkapi semua jawaban.`
+          `Masih ada ${unansweredQuestions.length} soal yang belum dijawab. Silakan lengkapi semua jawaban.`,
         );
         return;
       }
 
       // Check for answers below minimum character count
       const shortAnswers = questions.filter(
-        (q) => answers[q.id] && answers[q.id].trim().length < MIN_ANSWER_LENGTH
+        (q) => answers[q.id] && answers[q.id].trim().length < MIN_ANSWER_LENGTH,
       );
 
       if (shortAnswers.length > 0) {
         alert(
-          `Ada ${shortAnswers.length} jawaban yang kurang dari ${MIN_ANSWER_LENGTH} karakter. Silakan lengkapi jawaban Anda.`
+          `Ada ${shortAnswers.length} jawaban yang kurang dari ${MIN_ANSWER_LENGTH} karakter. Silakan lengkapi jawaban Anda.`,
         );
         return;
       }
@@ -766,9 +854,8 @@ function EssayGraderContent() {
         // Check if session was auto-completed after last answer
         if (messageResponse.data.session_completed) {
           console.log("🎉 Session auto-completed after last answer");
-          // Wait for backend to finish processing final result
-          await new Promise((resolve) => setTimeout(resolve, 3000));
-          router.push(`/profile/result/${sessionId}`);
+          // Redirect to confirmation page while admin verifies
+          router.push("/essay-grader/confirmation");
           return;
         }
       }
@@ -779,15 +866,12 @@ function EssayGraderContent() {
       });
       console.log("✅ Session completed manually:", completeResponse);
 
-      // Wait for backend to finish processing final analysis
-      await new Promise((resolve) => setTimeout(resolve, 5000));
-
-      // Navigate to result page
-      router.push(`/profile/result/${sessionId}`);
+      // Navigate to confirmation page while admin verifies
+      router.push("/essay-grader/confirmation");
     } catch (error) {
       console.error("❌ Error submitting test:", error);
       alert(
-        `Error: ${error instanceof Error ? error.message : "Gagal mengirim tes"}`
+        `Error: ${error instanceof Error ? error.message : "Gagal mengirim tes"}`,
       );
       setCurrentStep("test");
       setIsSubmitting(false);
@@ -821,11 +905,14 @@ function EssayGraderContent() {
           activeSession={activeSession}
           onResumeSession={handleResumeSession}
           isStarting={createSessionMutation.isPending}
-          isCheckingActiveSessions={isCheckingActiveSessions}
           showActiveSessionPopup={showActiveSessionPopup}
           onClosePopup={() => setShowActiveSessionPopup(false)}
           selectedMajor={selectedMajor}
           onMajorChange={setSelectedMajor}
+          showDeleteConfirm={showDeleteConfirm}
+          setShowDeleteConfirm={setShowDeleteConfirm}
+          isDeleting={isDeleting}
+          onDeleteSession={handleDeleteSession}
         />
       )}
 
@@ -842,6 +929,7 @@ function EssayGraderContent() {
           isSubmitting={isSubmitting}
           answers={answers}
           questions={questions}
+          submittedQuestions={submittedQuestions}
           onQuestionSelect={(questionId) => {
             const index = questions.findIndex((q) => q.id === questionId);
             if (index !== -1) setCurrentQuestionIndex(index);
@@ -856,6 +944,8 @@ function EssayGraderContent() {
           token={token}
           setQuestions={setQuestions}
           showFunFactAnimation={showFunFactAnimation}
+          errorMessage={errorMessage}
+          onClearError={() => setErrorMessage(null)}
         />
       )}
 
@@ -879,11 +969,14 @@ function IntroScreen({
   activeSession,
   onResumeSession,
   isStarting,
-  isCheckingActiveSessions,
   showActiveSessionPopup,
   onClosePopup,
   selectedMajor,
   onMajorChange,
+  showDeleteConfirm,
+  setShowDeleteConfirm,
+  isDeleting,
+  onDeleteSession,
 }: {
   user: User | null;
   onStart: () => void;
@@ -891,11 +984,14 @@ function IntroScreen({
   activeSession: GradingSession | null;
   onResumeSession: (sessionId: string) => void;
   isStarting: boolean;
-  isCheckingActiveSessions: boolean;
   showActiveSessionPopup: boolean;
   onClosePopup: () => void;
   selectedMajor: string;
   onMajorChange: (major: string) => void;
+  showDeleteConfirm: boolean;
+  setShowDeleteConfirm: (show: boolean) => void;
+  isDeleting: boolean;
+  onDeleteSession: () => void;
 }) {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
@@ -953,7 +1049,7 @@ function IntroScreen({
           {/* Welcome Card */}
           <div className="bg-white rounded-lg shadow-lg mb-4">
             {/* Gradient Header */}
-            <div className="bg-primary-600 px-4 sm:px-6 py-6">
+            <div className="bg-primary-600 px-4 sm:px-6 py-6 rounded-t-lg">
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -1075,7 +1171,8 @@ function IntroScreen({
                 className="bg-neutral-100 rounded-lg p-4 mb-4"
               >
                 <p className="text-xs text-neutral-600 mb-3">
-                  <span className="font-medium">Peserta:</span> {user?.full_name}
+                  <span className="font-medium">Peserta:</span>{" "}
+                  {user?.full_name}
                 </p>
 
                 {/* Major Selection Dropdown */}
@@ -1119,14 +1216,25 @@ function IntroScreen({
                         <strong>{activeSession.target_major}</strong> yang belum
                         diselesaikan.
                       </p>
-                      <motion.button
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => onResumeSession(activeSession.id)}
-                        className="btn btn-sm bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 text-xs"
-                      >
-                        Lanjutkan Assessment →
-                      </motion.button>
+                      <div className="flex gap-2">
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => onResumeSession(activeSession.id)}
+                          className="btn btn-sm bg-orange-600 hover:bg-orange-700 text-white px-4 py-1.5 text-xs flex items-center gap-1.5"
+                        >
+                          Lanjutkan Assessment →
+                        </motion.button>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setShowDeleteConfirm(true)}
+                          className="btn btn-sm bg-red-50 hover:bg-red-100 text-red-600 px-3 py-1.5 text-xs flex items-center gap-1.5"
+                        >
+                          <TrashIcon className="w-3.5 h-3.5" />
+                          Hapus
+                        </motion.button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -1140,22 +1248,20 @@ function IntroScreen({
                 className="flex items-center gap-2"
               >
                 <motion.button
-                  whileHover={{ scale: (isStarting || isCheckingActiveSessions) ? 1 : 1.05 }}
-                  whileTap={{ scale: (isStarting || isCheckingActiveSessions) ? 1 : 0.95 }}
+                  whileHover={{ scale: isStarting ? 1 : 1.05 }}
+                  whileTap={{ scale: isStarting ? 1 : 0.95 }}
                   onClick={onStart}
-                  disabled={isStarting || isCheckingActiveSessions}
+                  disabled={isStarting}
                   className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 sm:px-6 py-2 flex items-center justify-center space-x-2 text-xs sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span>
-                    {isCheckingActiveSessions
-                      ? "Memeriksa..."
-                      : isStarting
+                    {isStarting
                       ? "Memulai..."
                       : activeSession
                         ? "Mulai Assessment Baru"
                         : "Mulai Test Sekarang"}
                   </span>
-                  {(isStarting || isCheckingActiveSessions) ? (
+                  {isStarting ? (
                     <motion.div
                       animate={{ rotate: 360 }}
                       transition={{
@@ -1174,7 +1280,7 @@ function IntroScreen({
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={onBack}
-                  disabled={isStarting || isCheckingActiveSessions}
+                  disabled={isStarting}
                   className="btn btn-secondary btn-sm sm:btn-md px-4 sm:px-6 py-2 text-xs sm:text-sm disabled:opacity-50"
                 >
                   Kembali
@@ -1246,7 +1352,7 @@ function IntroScreen({
                       year: "numeric",
                       month: "long",
                       day: "numeric",
-                    }
+                    },
                   )}
                 </p>
               </div>
@@ -1265,14 +1371,93 @@ function IntroScreen({
                   <span>Lanjutkan Assessment</span>
                   <SparklesIcon className="w-4 h-4" />
                 </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={onClosePopup}
-                  className="w-full btn btn-secondary py-2.5"
+                <div className="grid grid-cols-2 gap-2">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={onClosePopup}
+                    className="btn btn-secondary py-2.5"
+                  >
+                    Tutup
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => {
+                      onClosePopup();
+                      setShowDeleteConfirm(true);
+                    }}
+                    className="btn bg-red-50 hover:bg-red-100 text-red-600 py-2.5 flex items-center justify-center gap-2"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                    Hapus
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+            onClick={() => !isDeleting && setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6"
+            >
+              <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center justify-center w-12 h-12 bg-red-100 rounded-full">
+                  <ExclamationTriangleIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-neutral-900">
+                    Hapus Session
+                  </h3>
+                  <p className="text-sm text-neutral-600">
+                    Konfirmasi penghapusan
+                  </p>
+                </div>
+              </div>
+
+              <p className="text-neutral-700 mb-6">
+                Apakah Anda yakin ingin menghapus assessment untuk{" "}
+                <strong>{activeSession?.target_major}</strong>? Tindakan ini
+                tidak dapat dibatalkan dan semua progress akan hilang.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-lg transition-colors font-medium disabled:opacity-50"
                 >
-                  Tutup
-                </motion.button>
+                  Batal
+                </button>
+                <button
+                  onClick={onDeleteSession}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50"
+                >
+                  {isDeleting ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Menghapus...
+                    </div>
+                  ) : (
+                    "Hapus"
+                  )}
+                </button>
               </div>
             </motion.div>
           </motion.div>
@@ -1294,6 +1479,7 @@ function TestScreen({
   isSubmitting,
   answers,
   questions,
+  submittedQuestions,
   onQuestionSelect,
   showReview,
   onShowReview,
@@ -1305,6 +1491,8 @@ function TestScreen({
   token,
   setQuestions,
   showFunFactAnimation,
+  errorMessage,
+  onClearError,
 }: {
   question: Question | undefined;
   currentQuestionIndex: number;
@@ -1317,6 +1505,7 @@ function TestScreen({
   isSubmitting: boolean;
   answers: { [key: string]: string };
   questions: Question[];
+  submittedQuestions: Set<string>;
   onQuestionSelect: (questionId: string) => void;
   showReview: boolean;
   onShowReview: (show: boolean) => void;
@@ -1327,6 +1516,9 @@ function TestScreen({
   sessionId: string | null;
   token: string | null;
   setQuestions: (questions: Question[]) => void;
+  showFunFactAnimation: boolean;
+  errorMessage: string | null;
+  onClearError: () => void;
   showFunFactAnimation: boolean;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -1341,8 +1533,8 @@ function TestScreen({
   const [isRecording, setIsRecording] = useState(false);
   const [isBrowserSupported, setIsBrowserSupported] = useState(false);
   const recognitionRef = useRef<any>(null);
-  const baseTextRef = useRef<string>(''); // Text before starting recording
-  const finalTranscriptRef = useRef<string>(''); // Accumulated final transcripts
+  const baseTextRef = useRef<string>(""); // Text before starting recording
+  const finalTranscriptRef = useRef<string>(""); // Accumulated final transcripts
   const isRecordingRef = useRef<boolean>(false); // Track recording state for auto-restart
   const onAnswerRef = useRef(onAnswer); // Store onAnswer in ref to avoid re-creating recognition
 
@@ -1353,8 +1545,10 @@ function TestScreen({
 
   // Check browser support for speech recognition
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (typeof window !== "undefined") {
+      const SpeechRecognition =
+        (window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition;
       setIsBrowserSupported(!!SpeechRecognition);
     }
   }, []);
@@ -1363,22 +1557,24 @@ function TestScreen({
   useEffect(() => {
     if (!isBrowserSupported) return;
 
-    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    const SpeechRecognition =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
     const recognition = new SpeechRecognition();
 
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'id-ID'; // Indonesian language
+    recognition.lang = "id-ID"; // Indonesian language
 
     recognition.onresult = (event: any) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
+      let interimTranscript = "";
+      let finalTranscript = "";
 
       // Process all results
       for (let i = 0; i < event.results.length; i++) {
         const transcript = event.results[i][0].transcript;
         if (event.results[i].isFinal) {
-          finalTranscript += transcript + ' ';
+          finalTranscript += transcript + " ";
         } else {
           interimTranscript += transcript;
         }
@@ -1390,40 +1586,43 @@ function TestScreen({
       }
 
       // Real-time update: base text + all final transcripts + current interim
-      const currentText = baseTextRef.current + finalTranscriptRef.current + interimTranscript;
+      const currentText =
+        baseTextRef.current + finalTranscriptRef.current + interimTranscript;
       // Use ref to call onAnswer without triggering re-creation of recognition
       onAnswerRef.current(currentText);
     };
 
     recognition.onerror = (event: any) => {
-      console.error('Speech recognition error:', event.error);
+      console.error("Speech recognition error:", event.error);
 
       // Don't auto-restart on these errors
-      if (event.error === 'not-allowed' || event.error === 'no-speech') {
+      if (event.error === "not-allowed" || event.error === "no-speech") {
         isRecordingRef.current = false;
         setIsRecording(false);
       }
 
-      if (event.error === 'not-allowed') {
-        alert('Izin mikrofon ditolak. Silakan izinkan akses mikrofon di browser Anda.');
+      if (event.error === "not-allowed") {
+        alert(
+          "Izin mikrofon ditolak. Silakan izinkan akses mikrofon di browser Anda.",
+        );
       }
     };
 
     recognition.onend = () => {
       // Auto-restart if user is still in recording mode
       if (isRecordingRef.current) {
-        console.log('🔄 Auto-restarting speech recognition...');
+        console.log("🔄 Auto-restarting speech recognition...");
         try {
           recognition.start();
         } catch (error) {
-          console.error('Failed to restart recognition:', error);
+          console.error("Failed to restart recognition:", error);
           isRecordingRef.current = false;
           setIsRecording(false);
-          finalTranscriptRef.current = '';
+          finalTranscriptRef.current = "";
         }
       } else {
         setIsRecording(false);
-        finalTranscriptRef.current = '';
+        finalTranscriptRef.current = "";
       }
     };
 
@@ -1450,18 +1649,18 @@ function TestScreen({
       isRecordingRef.current = false;
       recognitionRef.current.stop();
       setIsRecording(false);
-      finalTranscriptRef.current = '';
+      finalTranscriptRef.current = "";
     } else {
       // Save current text as base when starting recording
       baseTextRef.current = answer;
-      finalTranscriptRef.current = '';
+      finalTranscriptRef.current = "";
       isRecordingRef.current = true;
       setIsRecording(true);
 
       try {
         recognitionRef.current.start();
       } catch (error) {
-        console.error('Failed to start recognition:', error);
+        console.error("Failed to start recognition:", error);
         isRecordingRef.current = false;
         setIsRecording(false);
       }
@@ -1537,8 +1736,9 @@ function TestScreen({
             <div className="flex items-center gap-2">
               {/* Connection Status */}
               <div
-                className={`w-2 h-2 rounded-full ${socketConnected ? "bg-green-500" : "bg-red-500"
-                  } animate-pulse`}
+                className={`w-2 h-2 rounded-full ${
+                  socketConnected ? "bg-green-500" : "bg-red-500"
+                } animate-pulse`}
                 title={socketConnected ? "Connected" : "Disconnected"}
               />
 
@@ -1568,6 +1768,49 @@ function TestScreen({
       {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="max-w-7xl mx-auto px-2 sm:px-3 lg:px-4 py-4">
+          {/* Error Message Banner */}
+          <AnimatePresence>
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start justify-between"
+              >
+                <div className="flex items-start gap-3">
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="text-sm font-semibold text-red-900 mb-1">
+                      Terjadi Kesalahan
+                    </h3>
+                    <p className="text-sm text-red-700">{errorMessage}</p>
+                    <p className="text-xs text-red-600 mt-2">
+                      Silakan coba kirim ulang jawaban Anda dengan menekan
+                      tombol "🔄 Kirim Ulang"
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={onClearError}
+                  className="text-red-400 hover:text-red-600 transition-colors"
+                  aria-label="Tutup pesan error"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
           {!showReview && (
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-3 h-full">
               {/* Left Column - Question Content */}
@@ -1582,8 +1825,16 @@ function TestScreen({
                   {/* Question Card */}
                   <div className="bg-white rounded-lg shadow-md p-4 mb-3 flex flex-col min-h-0 flex-1 overflow-hidden">
                     <div className="mb-2 flex-shrink-0">
-                      <div className="inline-flex items-center space-x-2 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs font-medium mb-2">
-                        <span>Pertanyaan {currentQuestionIndex + 1}</span>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="inline-flex items-center space-x-2 px-2 py-0.5 bg-primary-100 text-primary-800 rounded-full text-xs font-medium">
+                          <span>Pertanyaan {currentQuestionIndex + 1}</span>
+                        </div>
+                        {submittedQuestions.has(question?.id || "") && (
+                          <div className="inline-flex items-center space-x-1 px-2 py-0.5 bg-green-100 text-green-800 rounded-full text-xs font-medium">
+                            <CheckCircleIcon className="w-3 h-3" />
+                            <span>Sudah Dijawab</span>
+                          </div>
+                        )}
                       </div>
                       <h2 className="text-lg md:text-xl font-bold text-neutral-900">
                         {question.question}
@@ -1610,14 +1861,23 @@ function TestScreen({
                           <motion.button
                             type="button"
                             onClick={toggleRecording}
-                            disabled={isWaitingForQuestion || currentQuestionIndex < questions.length - 1}
+                            disabled={
+                              isWaitingForQuestion ||
+                              submittedQuestions.has(question?.id || "") ||
+                              currentQuestionIndex < questions.length - 1
+                            }
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${isRecording
-                              ? 'bg-red-500 text-white shadow-lg'
-                              : 'bg-primary-100 text-primary-700 hover:bg-primary-200'
-                              }`}
-                            title={isRecording ? 'Klik untuk berhenti merekam' : 'Klik untuk mulai berbicara'}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                              isRecording
+                                ? "bg-red-500 text-white shadow-lg"
+                                : "bg-primary-100 text-primary-700 hover:bg-primary-200"
+                            }`}
+                            title={
+                              isRecording
+                                ? "Klik untuk berhenti merekam"
+                                : "Klik untuk mulai berbicara"
+                            }
                           >
                             {isRecording ? (
                               // Stop icon when recording
@@ -1634,9 +1894,7 @@ function TestScreen({
                               // Microphone icon
                               <MicrophoneIcon className="w-4 h-4" />
                             )}
-                            <span>
-                              {isRecording ? 'Berhenti' : 'Rekam'}
-                            </span>
+                            <span>{isRecording ? "Berhenti" : "Rekam"}</span>
                             {isRecording && (
                               <motion.span
                                 className="w-2 h-2 bg-white rounded-full"
@@ -1652,7 +1910,11 @@ function TestScreen({
                         value={answer}
                         onChange={(e) => onAnswer(e.target.value)}
                         placeholder={question.placeholder}
-                        disabled={isWaitingForQuestion || currentQuestionIndex < questions.length - 1} // Disable if waiting or if viewing past question
+                        disabled={
+                          isWaitingForQuestion ||
+                          submittedQuestions.has(question?.id || "") ||
+                          currentQuestionIndex < questions.length - 1
+                        } // Disable if waiting, already submitted, or if viewing past question
                         className="w-full px-3 py-2 rounded-lg border border-neutral-300 focus:border-primary-600 focus:ring-2 focus:ring-primary-200 outline-none resize-y font-regular text-sm text-neutral-900 placeholder-neutral-500 flex-1 disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
                         style={{ minHeight: "150px" }}
                         rows={6}
@@ -1661,6 +1923,16 @@ function TestScreen({
                         <p className="text-xs text-neutral-500">
                           {answer.length} karakter
                         </p>
+                        {submittedQuestions.has(question?.id || "") && (
+                          <motion.p
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="text-xs text-green-600 flex items-center gap-1"
+                          >
+                            <CheckCircleIcon className="w-3 h-3" />
+                            Jawaban telah terkirim
+                          </motion.p>
+                        )}
                         {isRecording && (
                           <motion.p
                             initial={{ opacity: 0 }}
@@ -1716,8 +1988,8 @@ function TestScreen({
                               i === currentQuestionIndex
                                 ? "#3b82f6"
                                 : i < currentQuestionIndex &&
-                                  questions[i] &&
-                                  answers[questions[i]?.id]
+                                    questions[i] &&
+                                    answers[questions[i]?.id]
                                   ? "#10b981"
                                   : "#e5e7eb",
                           }}
@@ -1726,49 +1998,50 @@ function TestScreen({
                       ))}
                     </div>
 
-                    {/* Tombol untuk soal yang sudah dijawab (soal sebelumnya) */}
-                    {currentQuestionIndex < questions.length - 1 ? (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          // Navigasi ke soal berikutnya tanpa submit (soal sudah dijawab)
-                          const nextQuestionId = questions[currentQuestionIndex + 1]?.id;
-                          if (nextQuestionId) {
-                            onQuestionSelect(nextQuestionId);
-                          }
-                        }}
-                        className="btn btn-primary px-3 py-2 text-xs flex items-center space-x-1"
-                      >
-                        <span>Lanjut</span>
-                        <span>→</span>
-                      </motion.button>
-                    ) : isLastQuestion ? (
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onNext}
-                        disabled={isSubmitting || isWaitingForQuestion}
-                        className="btn btn-primary px-4 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
-                      >
-                        <span>
-                          {isSubmitting
-                            ? "Mengirim..."
-                            : isWaitingForQuestion
-                              ? "Menunggu Soal..."
-                              : "Kirim Jawaban"}
-                        </span>
-                        {isWaitingForQuestion ? (
-                          <motion.div
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    {isLastQuestion ? (
+                      (() => {
+                        const isAlreadySubmitted = submittedQuestions.has(
+                          question?.id || "",
+                        );
+                        // Show retry if already submitted (regardless of isWaitingForQuestion)
+                        const showRetry = isAlreadySubmitted;
+
+                        return (
+                          <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={onNext}
+                            disabled={isSubmitting && !showRetry}
+                            className={`px-4 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1 ${
+                              showRetry
+                                ? "btn btn-warning animate-pulse"
+                                : "btn btn-primary"
+                            }`}
                           >
-                            <SparklesIcon className="w-3.5 h-3.5" />
-                          </motion.div>
-                        ) : (
-                          <SparklesIcon className="w-3.5 h-3.5" />
-                        )}
-                      </motion.button>
+                            <span>
+                              {isSubmitting && !showRetry
+                                ? "Mengirim..."
+                                : showRetry
+                                  ? "🔄 Kirim Ulang"
+                                  : "Kirim Jawaban"}
+                            </span>
+                            {isWaitingForQuestion ? (
+                              <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{
+                                  duration: 1,
+                                  repeat: Infinity,
+                                  ease: "linear",
+                                }}
+                              >
+                                <SparklesIcon className="w-3.5 h-3.5" />
+                              </motion.div>
+                            ) : (
+                              <SparklesIcon className="w-3.5 h-3.5" />
+                            )}
+                          </motion.button>
+                        );
+                      })()
                     ) : (
                       <motion.button
                         whileHover={{ scale: 1.05 }}
@@ -1776,16 +2049,19 @@ function TestScreen({
                         onClick={onNext}
                         disabled={
                           isWaitingForQuestion ||
-                          answer.trim().length < minAnswerLength
+                          (!submittedQuestions.has(question?.id || "") &&
+                            answer.trim().length < minAnswerLength)
                         }
                         className="btn btn-primary px-3 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
                       >
                         <span>
                           {isWaitingForQuestion
                             ? "Menunggu..."
-                            : answer.trim().length < minAnswerLength
-                              ? `Min ${minAnswerLength} karakter`
-                              : "Kirim & Lanjut"}
+                            : submittedQuestions.has(question?.id || "")
+                              ? "Next Question →"
+                              : answer.trim().length < minAnswerLength
+                                ? `Min ${minAnswerLength} karakter`
+                                : "Kirim & Lanjut"}
                         </span>
                         {isWaitingForQuestion && (
                           <motion.div
@@ -1823,12 +2099,13 @@ function TestScreen({
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => onQuestionSelect(q.id)}
-                      className={`w-full py-1.5 rounded-lg font-medium text-xs transition-colors ${idx === currentQuestionIndex
-                        ? "bg-primary-600 text-white"
-                        : answers[q.id] && answers[q.id].trim().length > 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-neutral-200 text-neutral-600 hover:bg-neutral-300"
-                        }`}
+                      className={`w-full py-1.5 rounded-lg font-medium text-xs transition-colors ${
+                        idx === currentQuestionIndex
+                          ? "bg-primary-600 text-white"
+                          : answers[q.id] && answers[q.id].trim().length > 0
+                            ? "bg-green-100 text-green-800"
+                            : "bg-neutral-200 text-neutral-600 hover:bg-neutral-300"
+                      }`}
                     >
                       {idx + 1}
                     </motion.button>
@@ -1839,7 +2116,7 @@ function TestScreen({
                     <span className="font-medium">
                       {
                         Object.entries(answers).filter(
-                          ([, value]) => value && value.trim().length > 0
+                          ([, value]) => value && value.trim().length > 0,
                         ).length
                       }
                       /{questions.length}
@@ -1869,15 +2146,25 @@ function TestScreen({
                         onClick={() => {
                           // Manual refresh trigger (just calls fetch first question logic or re-checks messages)
                           const checkNow = async () => {
-                            const result = await gradingService.getMessages(sessionId!, { limit: 50 }, token!);
-                            const questionMessages = result.data?.messages?.filter((m) => m.message_type === "question") || [];
+                            const result = await gradingService.getMessages(
+                              sessionId!,
+                              { limit: 50 },
+                              token!,
+                            );
+                            const questionMessages =
+                              result.data?.messages?.filter(
+                                (m) => m.message_type === "question",
+                              ) || [];
                             if (questionMessages.length > questions.length) {
-                              const mappedQuestions = questionMessages.map((q) => ({
-                                id: q.id,
-                                question: q.content,
-                                placeholder: "Tuliskan jawaban Anda dengan detail...",
-                                tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
-                              }));
+                              const mappedQuestions = questionMessages.map(
+                                (q) => ({
+                                  id: q.id,
+                                  question: q.content,
+                                  placeholder:
+                                    "Tuliskan jawaban Anda dengan detail...",
+                                  tips: "Berikan jawaban yang jujur dan spesifik berdasarkan pengalaman pribadi Anda.",
+                                }),
+                              );
                               setQuestions(mappedQuestions);
                             }
                           };
@@ -1929,19 +2216,21 @@ function TestScreen({
 
                     {answers[q.id] ? (
                       <div
-                        className={`rounded-lg p-3 border ${answers[q.id].trim().length < minAnswerLength
-                          ? "bg-orange-50 border-orange-200"
-                          : "bg-neutral-50 border-neutral-200"
-                          }`}
+                        className={`rounded-lg p-3 border ${
+                          answers[q.id].trim().length < minAnswerLength
+                            ? "bg-orange-50 border-orange-200"
+                            : "bg-neutral-50 border-neutral-200"
+                        }`}
                       >
                         <p className="text-neutral-700 whitespace-pre-wrap leading-relaxed text-xs">
                           {answers[q.id]}
                         </p>
                         <p
-                          className={`text-xs mt-2 ${answers[q.id].trim().length < minAnswerLength
-                            ? "text-orange-600 font-medium"
-                            : "text-neutral-500"
-                            }`}
+                          className={`text-xs mt-2 ${
+                            answers[q.id].trim().length < minAnswerLength
+                              ? "text-orange-600 font-medium"
+                              : "text-neutral-500"
+                          }`}
                         >
                           {answers[q.id].length} karakter
                           {answers[q.id].trim().length < minAnswerLength && (
@@ -1964,49 +2253,65 @@ function TestScreen({
               <div className="mt-3 flex justify-center">
                 {(() => {
                   const unansweredCount = questions.filter(
-                    (q) => !answers[q.id] || answers[q.id].trim().length === 0
+                    (q) => !answers[q.id] || answers[q.id].trim().length === 0,
                   ).length;
                   const shortAnswerCount = questions.filter(
                     (q) =>
                       answers[q.id] &&
                       answers[q.id].trim().length > 0 &&
-                      answers[q.id].trim().length < minAnswerLength
+                      answers[q.id].trim().length < minAnswerLength,
                   ).length;
                   const canSubmit =
                     unansweredCount === 0 && shortAnswerCount === 0;
 
-                  if (canSubmit) {
-                    return (
+                  // Always show disabled button with message in review mode
+                  return (
+                    <div className="text-center">
                       <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onSubmit}
-                        disabled={isSubmitting}
-                        className="btn btn-primary px-6 py-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-1"
+                        whileHover={{ scale: canSubmit ? 1.05 : 1 }}
+                        whileTap={{ scale: canSubmit ? 0.95 : 1 }}
+                        onClick={canSubmit ? onSubmit : undefined}
+                        disabled={true}
+                        className="btn btn-primary px-6 py-2 text-xs opacity-50 cursor-not-allowed flex items-center space-x-1"
                       >
                         <span>
                           {isSubmitting ? "Mengirim..." : "Selesai & Analisis"}
                         </span>
                         <SparklesIcon className="w-4 h-4" />
                       </motion.button>
-                    );
-                  } else {
-                    return (
                       <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="bg-yellow-50 rounded-lg p-2 border border-yellow-200"
+                        className="mt-3 bg-blue-50 rounded-lg p-3 border border-blue-200 max-w-md mx-auto"
                       >
-                        <p className="text-yellow-800 font-medium text-xs">
-                          {unansweredCount > 0 &&
-                            `⚠️ ${unansweredCount} soal belum dijawab`}
-                          {unansweredCount > 0 && shortAnswerCount > 0 && " | "}
-                          {shortAnswerCount > 0 &&
-                            `⚠️ ${shortAnswerCount} jawaban kurang dari ${minAnswerLength} karakter`}
+                        <p className="text-blue-800 font-medium text-xs mb-1">
+                          ℹ️ Tidak dapat menyelesaikan grading secara manual
+                        </p>
+                        <p className="text-blue-700 text-xs">
+                          Grading akan selesai otomatis setelah semua pertanyaan
+                          dijawab. Sistem akan menganalisis jawaban Anda secara
+                          otomatis.
                         </p>
                       </motion.div>
-                    );
-                  }
+                      {!canSubmit && (
+                        <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="mt-2 bg-yellow-50 rounded-lg p-2 border border-yellow-200"
+                        >
+                          <p className="text-yellow-800 font-medium text-xs">
+                            {unansweredCount > 0 &&
+                              `⚠️ ${unansweredCount} soal belum dijawab`}
+                            {unansweredCount > 0 &&
+                              shortAnswerCount > 0 &&
+                              " | "}
+                            {shortAnswerCount > 0 &&
+                              `⚠️ ${shortAnswerCount} jawaban kurang dari ${minAnswerLength} karakter`}
+                          </p>
+                        </motion.div>
+                      )}
+                    </div>
+                  );
                 })()}
               </div>
             </div>
@@ -2195,4 +2500,3 @@ function FunFactAnimation() {
     </motion.div>
   );
 }
-

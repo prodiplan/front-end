@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, Suspense, useState } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
@@ -35,32 +35,12 @@ function ResultContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get("sessionId");
-  const [enableFetch, setEnableFetch] = useState(false);
-  const [showNotReady, setShowNotReady] = useState(false);
-
-  // Delay 5 detik sebelum mulai fetch result
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setEnableFetch(true);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const {
     data: resultData,
     isLoading: isResultLoading,
     error,
-  } = useGradingResult(sessionId || undefined, enableFetch);
-
-  // Jika sudah fetch tapi hasil tidak ada, tampilkan pesan
-  useEffect(() => {
-    if (enableFetch && !isResultLoading && !resultData && !error) {
-      const timer = setTimeout(() => {
-        setShowNotReady(true);
-      }, 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [enableFetch, isResultLoading, resultData, error]);
+  } = useGradingResult(sessionId || undefined);
 
   useEffect(() => {
     if (!isAuthLoading && !user) {
@@ -68,11 +48,11 @@ function ResultContent() {
     }
   }, [user, isAuthLoading, router]);
 
-  if (isAuthLoading || (enableFetch && isResultLoading)) {
+  if (isAuthLoading || isResultLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4 animate-pulse">
             <SparklesIcon className="w-8 h-8 text-primary-600" />
           </div>
           <p className="text-neutral-600">Memuat hasil analisis...</p>
@@ -85,22 +65,85 @@ function ResultContent() {
     return null;
   }
 
-  if (showNotReady || (error || !resultData)) {
+  // Check verification status
+  if (resultData && resultData.verification_status === "pending") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-neutral-50">
         <div className="text-center max-w-md px-4">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4">
-            <SparklesIcon className="w-8 h-8 text-primary-600" />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-amber-100 rounded-full mb-4">
+            <ClockIcon className="w-8 h-8 text-amber-600" />
           </div>
           <h2 className="text-xl font-bold text-neutral-900 mb-2">
-            AI Sedang Menganalisis
+            Hasil Sedang Diverifikasi
           </h2>
           <p className="text-neutral-600 mb-6">
-            AI kami sedang menganalisis jawaban Anda secara mendalam untuk memberikan hasil terbaik.
-            Silakan kembali ke profil dan cek kembali sebentar lagi.
+            Hasil analisis Anda sedang menunggu persetujuan dari admin. Anda
           </p>
-          <Link href="/profile" className="btn btn-primary">
-            Kembali ke Profil
+          <div className="flex flex-col gap-3">
+            <Link href="/profile/enhanced" className="btn btn-primary">
+              Kembali ke Profil
+            </Link>
+            <Link href="/dashboard" className="btn btn-secondary">
+              Ke Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (resultData && resultData.verification_status === "rejected") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center max-w-md px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+            <LightBulbIcon className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">
+            Hasil Ditolak
+          </h2>
+          <p className="text-neutral-600 mb-2">
+            Maaf, hasil analisis Anda tidak dapat disetujui oleh admin.
+          </p>
+          {resultData.admin_notes && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 text-left">
+              <p className="text-sm font-semibold text-neutral-900 mb-1">
+                Catatan Admin:
+              </p>
+              <p className="text-sm text-neutral-700">
+                {resultData.admin_notes}
+              </p>
+            </div>
+          )}
+          <div className="flex flex-col gap-3">
+            <Link href="/essay-grader" className="btn btn-primary">
+              Mulai Sesi Baru
+            </Link>
+            <Link href="/profile/enhanced" className="btn btn-secondary">
+              Kembali ke Profil
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !resultData) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+        <div className="text-center max-w-md px-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-red-100 rounded-full mb-4">
+            <LightBulbIcon className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-xl font-bold text-neutral-900 mb-2">
+            Gagal Memuat Hasil
+          </h2>
+          <p className="text-neutral-600 mb-6">
+            Maaf, kami tidak dapat memuat hasil analisis Anda saat ini. Silakan
+            coba lagi nanti atau hubungi dukungan jika masalah berlanjut.
+          </p>
+          <Link href="/dashboard" className="btn btn-primary">
+            Kembali ke Dashboard
           </Link>
         </div>
       </div>
@@ -120,36 +163,68 @@ function ResultContent() {
       .filter((s) => s.length > 0);
   };
 
+  // Convert score to category
+  const getScoreCategory = (score: number | string): string => {
+    const numScore = typeof score === 'string' ? parseInt(score) : score;
+    if (numScore >= 90) return "Sangat Baik";
+    if (numScore >= 80) return "Baik";
+    if (numScore >= 70) return "Cukup Baik";
+    if (numScore >= 60) return "Cukup";
+    return "Perlu Ditingkatkan";
+  };
+
+  // Get category color
+  const getCategoryColor = (score: number | string): string => {
+    const numScore = typeof score === 'string' ? parseInt(score) : score;
+    if (numScore >= 90) return "text-emerald-700 bg-emerald-50 border-emerald-200";
+    if (numScore >= 80) return "text-green-700 bg-green-50 border-green-200";
+    if (numScore >= 70) return "text-blue-700 bg-blue-50 border-blue-200";
+    if (numScore >= 60) return "text-yellow-700 bg-yellow-50 border-yellow-200";
+    return "text-orange-700 bg-orange-50 border-orange-200";
+  };
+
   const strengths = parseToArray(result.analysis_report?.strengths);
   const weaknesses = parseToArray(result.analysis_report?.weaknesses);
   const recommendations = parseToArray(result.analysis_report?.recommendations);
+  
+  // Convert key_insights to show categories instead of scores
   const detailed_insights = result.analysis_report?.key_insights
     ? Object.entries(result.analysis_report.key_insights).map(
-      ([k, v]) => `${k.replace(/_/g, " ")}: ${v}`
-    )
+        ([k, v]) => ({
+          label: k.replace(/_/g, " "),
+          value: v,
+          category: getScoreCategory(v),
+          colorClass: getCategoryColor(v)
+        })
+      )
     : [];
 
   // Map readiness_level to display labels
   const getReadinessLabel = (level: string) => {
     switch (level) {
+      case "very_ready":
+        return "Sangat Siap";
       case "ready":
         return "Siap";
-      case "needs_improvement":
+      case "somewhat_ready":
         return "Cukup Siap";
       case "not_ready":
-        return "Perlu Persiapan";
+        return "Belum Siap";
       default:
         return level;
     }
   };
 
-  const isReadyLevel = result.readiness_level === "ready";
+  const isReadyLevel =
+    result.readiness_level === "ready" ||
+    result.readiness_level === "very_ready";
   const readinessLabel = getReadinessLabel(result.readiness_level);
 
   // For styling purposes
   const getScoreCardClasses = () => {
-    if (isReadyLevel) return "bg-green-600";
-    if (result.readiness_level === "needs_improvement") return "bg-yellow-600";
+    if (result.readiness_level === "very_ready") return "bg-emerald-600";
+    if (result.readiness_level === "ready") return "bg-green-600";
+    if (result.readiness_level === "somewhat_ready") return "bg-yellow-600";
     return "bg-red-600"; // not_ready
   };
 
@@ -254,29 +329,8 @@ function ResultContent() {
                 />
               </div>
 
-              <div className="flex flex-col items-center justify-around gap-8 mb-8">
-                {/* Score */}
-                <div className="text-center">
-                  <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
-                    transition={{
-                      duration: 0.6,
-                      ease: "easeOut",
-                      delay: 0.3,
-                    }}
-                    className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-white border-opacity-30 flex items-center justify-center mb-4"
-                  >
-                    <span className="text-4xl md:text-5xl font-bold">
-                      {result.final_score}
-                    </span>
-                  </motion.div>
-                  <p className="text-white text-opacity-90 font-medium">
-                    Skor Keseluruhan
-                  </p>
-                </div>
-
-                {/* Readiness Level */}
+              <div className="flex flex-col items-center justify-center gap-8 mb-8">
+                {/* Readiness Level - Kategori Saja */}
                 <div className="text-center">
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }}
@@ -284,18 +338,15 @@ function ResultContent() {
                     transition={{
                       duration: 0.6,
                       ease: "easeOut",
-                      delay: 0.5,
+                      delay: 0.3,
                     }}
                   >
-                    <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl px-6 md:px-8 py-4 mb-4 inline-block">
-                      <p className="text-white text-opacity-70 text-sm font-medium mb-1">
-                        Level Kesiapan
-                      </p>
-                      <p className="text-xl md:text-2xl font-bold text-white">
+                    <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-2xl px-8 md:px-12 py-6 mb-4 inline-block">
+                      <p className="text-lg md:text-2xl font-bold text-white">
                         {readinessLabel}
                       </p>
                     </div>
-                    <div className="flex items-center justify-center space-x-2">
+                    <div className="flex items-center justify-center space-x-2 mt-4">
                       <CheckCircleIcon className="w-5 h-5" />
                       <span className="text-sm text-white text-opacity-90">
                         {isReadyLevel
@@ -388,14 +439,14 @@ function ResultContent() {
           {detailed_insights.length > 0 && (
             <motion.div
               variants={itemVariants}
-              className="bg-purple-50 rounded-2xl shadow-md p-8 mb-8 border border-purple-200"
+              className="bg-white rounded-2xl shadow-md p-8 mb-8"
             >
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <SparklesIcon className="w-6 h-6 text-purple-600" />
+                  <ChartBarIcon className="w-6 h-6 text-purple-600" />
                 </div>
                 <h2 className="text-2xl font-bold text-neutral-900">
-                  Insight Mendalam
+                  Analisis Detail
                 </h2>
               </div>
 
@@ -403,21 +454,21 @@ function ResultContent() {
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="space-y-3"
+                className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
                 {detailed_insights.map((insight, index) => (
                   <motion.div
                     key={index}
                     variants={itemVariants}
-                    className="flex items-start space-x-3 p-4 bg-white rounded-lg border border-purple-200"
+                    className={`p-6 rounded-xl border-2 ${insight.colorClass}`}
                   >
-                    <div className="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <span className="text-white text-xs font-bold">
-                        {index + 1}
-                      </span>
+                    <div className="flex items-center justify-between mb-3">
+                      <h3 className="text-sm font-semibold uppercase tracking-wide opacity-80">
+                        {insight.label}
+                      </h3>
                     </div>
-                    <p className="text-neutral-700 leading-relaxed pt-0.5">
-                      {insight}
+                    <p className="text-lg font-bold mb-1">
+                      {insight.category}
                     </p>
                   </motion.div>
                 ))}
@@ -513,16 +564,18 @@ function ResultContent() {
 
 export default function ResultPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-neutral-50">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4 animate-pulse">
-            <SparklesIcon className="w-8 h-8 text-primary-600" />
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-neutral-50">
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-100 rounded-full mb-4 animate-pulse">
+              <SparklesIcon className="w-8 h-8 text-primary-600" />
+            </div>
+            <p className="text-neutral-600">Memuat hasil...</p>
           </div>
-          <p className="text-neutral-600">Memuat hasil...</p>
         </div>
-      </div>
-    }>
+      }
+    >
       <ResultContent />
     </Suspense>
   );

@@ -7,7 +7,8 @@
 
 import { io, Socket } from "socket.io-client";
 
-const WEBSOCKET_URL = process.env.NEXT_PUBLIC_WS_URL || "wss://api.prodiplan.my.id";
+const WEBSOCKET_URL =
+  process.env.NEXT_PUBLIC_WS_URL || "wss://api.prodiplan.my.id";
 const WEBSOCKET_PATH = "/socket.io";
 
 /**
@@ -30,7 +31,7 @@ export interface SocketScoreUpdate {
 export interface SocketSessionCompleted {
   session_id: string;
   final_score: number;
-  readiness_level: "ready" | "not_ready" | "needs_improvement";
+  readiness_level: "not_ready" | "somewhat_ready" | "ready" | "very_ready";
   result_id: string;
 }
 
@@ -105,7 +106,7 @@ export function sendAnswer(socket: Socket, sessionId: string, content: string) {
  */
 export function onQuestion(
   socket: Socket,
-  callback: (data: SocketQuestion) => void
+  callback: (data: SocketQuestion) => void,
 ) {
   socket.on("question", callback);
 }
@@ -115,7 +116,7 @@ export function onQuestion(
  */
 export function onScoreUpdate(
   socket: Socket,
-  callback: (data: SocketScoreUpdate) => void
+  callback: (data: SocketScoreUpdate) => void,
 ) {
   socket.on("score_update", callback);
 }
@@ -125,7 +126,7 @@ export function onScoreUpdate(
  */
 export function onSessionCompleted(
   socket: Socket,
-  callback: (data: SocketSessionCompleted) => void
+  callback: (data: SocketSessionCompleted) => void,
 ) {
   socket.on("session_completed", callback);
 }
@@ -142,7 +143,7 @@ export function onError(socket: Socket, callback: (data: SocketError) => void) {
  */
 export function onGradingResult(
   socket: Socket,
-  callback: (data: SocketGradingResult) => void
+  callback: (data: SocketGradingResult) => void,
 ) {
   socket.on("grading_result", callback);
 }

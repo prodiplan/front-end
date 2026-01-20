@@ -4,6 +4,7 @@ import {
   SessionMessage,
   SendMessageResponse,
   GradingResult,
+  GradingStatistics,
   ApiResponse,
   PaginatedResponse,
 } from "../../types";
@@ -16,7 +17,7 @@ export const gradingService = {
       max_questions?: number;
       session_duration_minutes?: number;
     },
-    token: string
+    token: string,
   ) => {
     return apiCall(
       API_ENDPOINTS.grading.createSession,
@@ -24,7 +25,7 @@ export const gradingService = {
         method: "POST",
         body: JSON.stringify(data),
       },
-      token
+      token,
     ) as Promise<ApiResponse<GradingSession>>;
   },
 
@@ -34,13 +35,13 @@ export const gradingService = {
       {
         method: "GET",
       },
-      token
+      token,
     ) as Promise<ApiResponse<GradingSession>>;
   },
 
   listSessions: async (
     params: { status?: string; limit?: number; offset?: number } = {},
-    token: string
+    token: string,
   ) => {
     const queryParams = new URLSearchParams();
     if (params.status) queryParams.append("status", params.status);
@@ -53,14 +54,14 @@ export const gradingService = {
       {
         method: "GET",
       },
-      token
+      token,
     ) as Promise<ApiResponse<{ sessions: GradingSession[]; pagination: any }>>;
   },
 
   completeSession: async (
     sessionId: string,
     data?: { final_score?: number; readiness_level?: string },
-    token?: string
+    token?: string,
   ) => {
     return apiCall(
       API_ENDPOINTS.grading.completeSession(sessionId),
@@ -68,15 +69,25 @@ export const gradingService = {
         method: "POST",
         body: JSON.stringify(data || {}),
       },
-      token || ""
+      token || "",
     ) as Promise<ApiResponse<GradingSession>>;
+  },
+
+  deleteSession: async (sessionId: string, token: string) => {
+    return apiCall(
+      API_ENDPOINTS.grading.deleteSession(sessionId),
+      {
+        method: "DELETE",
+      },
+      token,
+    ) as Promise<ApiResponse<void>>;
   },
 
   // Messages
   getMessages: async (
     sessionId: string,
     params: { limit?: number; offset?: number } = {},
-    token: string
+    token: string,
   ) => {
     const queryParams = new URLSearchParams();
     if (params.limit) queryParams.append("limit", params.limit.toString());
@@ -88,14 +99,14 @@ export const gradingService = {
       {
         method: "GET",
       },
-      token
+      token,
     ) as Promise<ApiResponse<{ messages: SessionMessage[]; pagination: any }>>;
   },
 
   sendMessage: async (
     sessionId: string,
     data: { message_type: "question" | "answer"; content: string },
-    token: string
+    token: string,
   ) => {
     return apiCall(
       API_ENDPOINTS.messages.send(sessionId),
@@ -103,7 +114,7 @@ export const gradingService = {
         method: "POST",
         body: JSON.stringify(data),
       },
-      token
+      token,
     ) as Promise<ApiResponse<SendMessageResponse>>;
   },
 
@@ -114,13 +125,13 @@ export const gradingService = {
       {
         method: "GET",
       },
-      token
+      token,
     ) as Promise<ApiResponse<GradingResult>>;
   },
 
   listResults: async (
     params: { readiness_level?: string; limit?: number; offset?: number } = {},
-    token: string
+    token: string,
   ) => {
     const queryParams = new URLSearchParams();
     if (params.readiness_level)
@@ -134,7 +145,17 @@ export const gradingService = {
       {
         method: "GET",
       },
-      token
+      token,
     ) as Promise<ApiResponse<{ results: GradingResult[]; pagination: any }>>; // Assuming 'results' key based on pattern
+  },
+
+  getStatistics: async (token: string) => {
+    return apiCall(
+      API_ENDPOINTS.results.statistics,
+      {
+        method: "GET",
+      },
+      token,
+    ) as Promise<ApiResponse<GradingStatistics>>;
   },
 };

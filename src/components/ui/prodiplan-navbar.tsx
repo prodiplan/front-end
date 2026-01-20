@@ -120,13 +120,13 @@ export function ProdiPlanNavBar({
 
         // Check which section is in view - check in reverse order for accuracy
         const testimonialElement = document.querySelector(
-          "#testimonials"
+          "#testimonials",
         ) as HTMLElement | null;
         const howItWorksElement = document.querySelector(
-          "#how-it-works"
+          "#how-it-works",
         ) as HTMLElement | null;
         const featureElement = document.querySelector(
-          "#features"
+          "#features",
         ) as HTMLElement | null;
 
         // Check sections in reverse order with better threshold
@@ -332,7 +332,7 @@ export function ProdiPlanNavBar({
                         "relative z-10 cursor-pointer text-xs sm:text-sm font-semibold px-5 sm:px-8 py-3 rounded-full transition-all duration-300 ease-out",
                         isActive
                           ? "text-white"
-                          : "text-gray-600 hover:text-gray-900"
+                          : "text-gray-600 hover:text-gray-900",
                       )}
                     >
                       <span className="hidden lg:inline">{item.name}</span>
@@ -391,7 +391,7 @@ export function ProdiPlanNavBar({
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <Link
-                        href="/profile"
+                        href="/profile/enhanced"
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
                       >
                         Profile
@@ -431,7 +431,7 @@ export function ProdiPlanNavBar({
                         </p>
                       </div>
                       <Link
-                        href="/profile"
+                        href="/profile/enhanced"
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
                       >
                         Profile
@@ -518,7 +518,7 @@ export function ProdiPlanNavBar({
                     "block px-2 sm:px-4 py-2 sm:py-3 rounded-lg transition-colors text-xs sm:text-base",
                     isActive
                       ? "bg-blue-100 text-blue-900 font-semibold"
-                      : "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-700 hover:bg-gray-100",
                   )}
                 >
                   <span className="line-clamp-1">{item.name}</span>

@@ -3,37 +3,40 @@ const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://api.prodiplan.my.id";
 
 export const API_ENDPOINTS = {
-  // Auth endpoints - direct path routing without /api/v1 prefix
+  // Auth endpoints - using /v1 prefix as per API documentation
   auth: {
-    register: `${API_BASE_URL}/auth/register`,
-    login: `${API_BASE_URL}/auth/login`,
-    refresh: `${API_BASE_URL}/auth/refresh`,
-    me: `${API_BASE_URL}/auth/me`,
-    profile: `${API_BASE_URL}/auth/profile`,
-    logout: `${API_BASE_URL}/auth/logout`,
-    forgotPassword: `${API_BASE_URL}/auth/forgot-password`,
-    resetPassword: `${API_BASE_URL}/auth/reset-password`,
-    deleteUser: `${API_BASE_URL}/auth/user`,
+    register: `${API_BASE_URL}/v1/auth/register`,
+    login: `${API_BASE_URL}/v1/auth/login`,
+    refresh: `${API_BASE_URL}/v1/auth/refresh`,
+    me: `${API_BASE_URL}/v1/auth/me`,
+    profile: `${API_BASE_URL}/v1/auth/profile`,
+    logout: `${API_BASE_URL}/v1/auth/logout`,
+    forgotPassword: `${API_BASE_URL}/v1/auth/forgot-password`,
+    resetPassword: `${API_BASE_URL}/v1/auth/reset-password`,
+    deleteUser: `${API_BASE_URL}/v1/auth/user`,
   },
   // Grading Session endpoints
   grading: {
-    createSession: `${API_BASE_URL}/grading-sessions`,
-    getSession: (id: string) => `${API_BASE_URL}/grading-sessions/${id}`,
-    listSessions: `${API_BASE_URL}/grading-sessions`,
+    createSession: `${API_BASE_URL}/v1/grading-sessions`,
+    getSession: (id: string) => `${API_BASE_URL}/v1/grading-sessions/${id}`,
+    listSessions: `${API_BASE_URL}/v1/grading-sessions`,
     completeSession: (id: string) =>
-      `${API_BASE_URL}/grading-sessions/${id}/complete`,
+      `${API_BASE_URL}/v1/grading-sessions/${id}/complete`,
+    deleteSession: (id: string) => `${API_BASE_URL}/v1/grading-sessions/${id}`,
   },
   // Messages endpoints
   messages: {
     list: (sessionId: string) =>
-      `${API_BASE_URL}/grading-sessions/${sessionId}/messages`,
+      `${API_BASE_URL}/v1/grading-sessions/${sessionId}/messages`,
     send: (sessionId: string) =>
-      `${API_BASE_URL}/grading-sessions/${sessionId}/messages`,
+      `${API_BASE_URL}/v1/grading-sessions/${sessionId}/messages`,
   },
   // Grading Results endpoints
   results: {
-    get: (sessionId: string) => `${API_BASE_URL}/grading-results/${sessionId}`,
-    list: `${API_BASE_URL}/grading-results`,
+    get: (sessionId: string) =>
+      `${API_BASE_URL}/v1/grading-results/${sessionId}`,
+    list: `${API_BASE_URL}/v1/grading-results`,
+    statistics: `${API_BASE_URL}/v1/grading-results/statistics`,
   },
 };
 
@@ -43,7 +46,7 @@ export const API_ENDPOINTS = {
 export async function apiCall(
   url: string,
   options: RequestInit = {},
-  token?: string
+  token?: string,
 ) {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

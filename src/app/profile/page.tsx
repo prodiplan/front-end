@@ -58,12 +58,19 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-  const { data: sessionsData, isLoading: isSessionsLoading } =
+  const { data: sessionsData, isLoading: isSessionsLoading, refetch: refetchSessions } =
     useGradingSessions({ limit: 20 });
 
   const { data: resultsData, isLoading: isResultsLoading } = useGradingResults({
     limit: 100,
   });
+
+  // Auto-refetch sessions when results change
+  useEffect(() => {
+    if (resultsData?.results) {
+      refetchSessions();
+    }
+  }, [resultsData?.results?.length]);
 
   // Get set of session IDs that have results (completed/analyzed)
   const completedSessionIds = new Set(
@@ -476,6 +483,11 @@ export default function ProfilePage() {
                                         assessment.created_at
                                       ).toLocaleDateString("id-ID")}
                                     </p>
+                                    <p className="text-xs text-blue-600 mt-1">
+                                      {assessment.question_count || 0}/
+                                      {assessment.max_questions || 10}{" "}
+                                      pertanyaan dijawab
+                                    </p>
                                   </div>
                                   <div className="flex items-center space-x-1">
                                     <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
@@ -497,6 +509,10 @@ export default function ProfilePage() {
                                     {new Date(
                                       assessment.created_at
                                     ).toLocaleDateString("id-ID")}
+                                  </p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {assessment.question_count || 0} pertanyaan
+                                    dijawab
                                   </p>
                                 </div>
                                 <div className="flex items-center space-x-1">

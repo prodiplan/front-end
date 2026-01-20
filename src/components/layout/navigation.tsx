@@ -87,7 +87,7 @@ export function Navigation({ onLogoutClick }: NavigationProps) {
         },
         {
           name: "Profile",
-          href: "/profile",
+          href: "/profile/enhanced",
           icon: <UserIcon className="w-4 h-4" />,
         },
         {
@@ -308,7 +308,7 @@ export function Navigation({ onLogoutClick }: NavigationProps) {
                         </p>
                       </div>
                       <Link
-                        href="/profile"
+                        href="/profile/enhanced"
                         onClick={() => setIsProfileMenuOpen(false)}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >

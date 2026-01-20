@@ -66,6 +66,10 @@
     @apply bg-secondary-600 text-white hover:bg-secondary-700 focus:ring-secondary-500 shadow-sm;
   }
 
+  .btn-warning {
+    @apply bg-orange-500 text-white hover:bg-orange-600 focus:ring-orange-500 shadow-sm;
+  }
+
   .btn-ghost {
     @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:ring-primary-500;
   }

@@ -50,7 +50,7 @@ export default function AuthPage() {
   };
 
   const handleRegisterChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     setFormData({
       ...formData,
@@ -88,7 +88,7 @@ export default function AuthPage() {
 
     if (formData.password.length < 8) {
       toast.error(
-        "Password minimal 8 karakter dan harus mengandung huruf dan angka"
+        "Password minimal 8 karakter dan harus mengandung huruf dan angka",
       );
       return;
     }
@@ -482,12 +482,12 @@ export default function AuthPage() {
                   </div>
 
                   <div className="text-sm">
-                    <a
-                      href="#"
+                    <Link
+                      href="/auth/forgot-password"
                       className="font-medium text-primary-600 hover:text-primary-500"
                     >
                       Lupa password?
-                    </a>
+                    </Link>
                   </div>
                 </div>
 

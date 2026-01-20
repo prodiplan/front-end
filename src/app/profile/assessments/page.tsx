@@ -33,7 +33,7 @@ export default function AssessmentsPage() {
   const router = useRouter();
 
   // Fetch user's grading sessions (for active/analyzing sessions)
-  const { data: sessionsData, isLoading: isLoadingSessions } =
+  const { data: sessionsData, isLoading: isLoadingSessions, refetch: refetchSessions } =
     useGradingSessions({ limit: 100 });
 
   // Fetch user's grading results (for completed sessions with results)
@@ -41,13 +41,20 @@ export default function AssessmentsPage() {
     limit: 100,
   });
 
+  // Auto-refetch sessions when results change
+  useEffect(() => {
+    if (resultsData?.results) {
+      refetchSessions();
+    }
+  }, [resultsData?.results?.length]);
+
   // Combine sessions and results into assessments
   const assessments = useMemo<Assessment[]>(() => {
     const assessmentMap = new Map<string, Assessment>();
 
     // Get set of session IDs that have results (completed/analyzed)
     const completedSessionIds = new Set(
-      resultsData?.results?.map((r) => r.session_id) || []
+      resultsData?.results?.map((r) => r.session_id) || [],
     );
 
     // Add sessions
@@ -55,11 +62,12 @@ export default function AssessmentsPage() {
       sessionsData.sessions.forEach((session) => {
         const hasResult = completedSessionIds.has(session.id);
         const result = resultsData?.results?.find(
-          (r) => r.session_id === session.id
+          (r) => r.session_id === session.id,
         );
 
         // Check if session has expired (client-side check)
-        const isExpired = session.expires_at && new Date(session.expires_at) < new Date();
+        const isExpired =
+          session.expires_at && new Date(session.expires_at) < new Date();
 
         if (hasResult && result) {
           // Completed - has been analyzed by AI
@@ -87,7 +95,11 @@ export default function AssessmentsPage() {
             question_count: session.question_count,
             max_questions: session.max_questions,
           });
-        } else if (session.status === "expired" || session.status === "completed" || isExpired) {
+        } else if (
+          session.status === "expired" ||
+          session.status === "completed" ||
+          isExpired
+        ) {
           // Not completed - session expired (by status or time), or completed but no result available yet
           assessmentMap.set(session.id, {
             id: session.id,
@@ -136,7 +148,7 @@ export default function AssessmentsPage() {
     // Convert to array and sort by created_at (newest first)
     return Array.from(assessmentMap.values()).sort(
       (a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
     );
   }, [sessionsData, resultsData]);
 
@@ -170,33 +182,41 @@ export default function AssessmentsPage() {
   }
 
   const completedAssessments = assessments.filter(
-    (a) => a.status === "completed"
+    (a) => a.status === "completed",
   );
   const inProgressAssessments = assessments.filter(
-    (a) => a.status === "in_progress"
+    (a) => a.status === "in_progress",
   );
   const notCompletedAssessments = assessments.filter(
-    (a) => a.status === "not_completed"
+    (a) => a.status === "not_completed",
   );
 
-  // Map score to category (based on score range, not backend readiness_level)
-  const getScoreCategory = (score?: number) => {
-    if (!score) return { label: "N/A", color: "text-gray-600" };
-    if (score >= 90) return { label: "Sangat Siap", color: "text-green-700" };
-    if (score >= 80) return { label: "Siap", color: "text-green-600" };
-    if (score >= 70) return { label: "Cukup Siap", color: "text-blue-600" };
-    if (score >= 60) return { label: "Perlu Persiapan", color: "text-yellow-600" };
-    return { label: "Belum Siap", color: "text-red-600" };
+  // Map readiness_level from backend to Indonesian label and color
+  const getReadinessDisplay = (level?: string) => {
+    if (!level) return { label: "N/A", color: "text-gray-600" };
+
+    switch (level) {
+      case "very_ready":
+        return { label: "Sangat Siap", color: "text-emerald-700" };
+      case "ready":
+        return { label: "Siap", color: "text-green-600" };
+      case "somewhat_ready":
+        return { label: "Cukup Siap", color: "text-yellow-600" };
+      case "not_ready":
+        return { label: "Belum Siap", color: "text-red-600" };
+      default:
+        return { label: level, color: "text-gray-600" };
+    }
   };
 
   const avgScore =
     completedAssessments.length > 0
       ? Math.round(
-        completedAssessments.reduce(
-          (sum, a) => sum + (a.final_score || 0),
-          0
-        ) / completedAssessments.length
-      )
+          completedAssessments.reduce(
+            (sum, a) => sum + (a.final_score || 0),
+            0,
+          ) / completedAssessments.length,
+        )
       : 0;
 
   const highestScore =
@@ -210,7 +230,10 @@ export default function AssessmentsPage() {
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
-            <Link href="/profile" className="flex items-center space-x-2 group">
+            <Link
+              href="/profile/enhanced"
+              className="flex items-center space-x-2 group"
+            >
               <ArrowLeftIcon className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors" />
               <span className="text-gray-600 group-hover:text-primary-600 transition-colors font-medium">
                 Back to Profile
@@ -364,7 +387,7 @@ export default function AssessmentsPage() {
                             <p className="text-sm text-gray-500 mt-1">
                               Started on{" "}
                               {new Date(
-                                assessment.created_at
+                                assessment.created_at,
                               ).toLocaleDateString("id-ID", {
                                 weekday: "long",
                                 year: "numeric",
@@ -429,7 +452,7 @@ export default function AssessmentsPage() {
                                 year: "numeric",
                                 month: "long",
                                 day: "numeric",
-                              }
+                              },
                             )}
                           </p>
                         </div>
@@ -480,7 +503,7 @@ export default function AssessmentsPage() {
                             <p className="text-sm text-gray-500 mt-1">
                               Completed on{" "}
                               {new Date(
-                                assessment.completed_at!
+                                assessment.completed_at!,
                               ).toLocaleDateString("id-ID", {
                                 weekday: "long",
                                 year: "numeric",
@@ -493,8 +516,13 @@ export default function AssessmentsPage() {
                             <div className="text-3xl font-bold text-green-600">
                               {assessment.final_score}
                             </div>
-                            <p className={`text-sm font-medium ${getScoreCategory(assessment.final_score).color}`}>
-                              {getScoreCategory(assessment.final_score).label}
+                            <p
+                              className={`text-sm font-medium ${getReadinessDisplay(assessment.readiness_level).color}`}
+                            >
+                              {
+                                getReadinessDisplay(assessment.readiness_level)
+                                  .label
+                              }
                             </p>
                           </div>
                         </div>

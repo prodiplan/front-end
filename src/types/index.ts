@@ -64,7 +64,11 @@ export interface GradingResult {
   id: string;
   session_id: string;
   final_score: number;
-  readiness_level: "ready" | "not_ready" | "needs_improvement";
+  readiness_level: "not_ready" | "somewhat_ready" | "ready" | "very_ready";
+  verification_status: "pending" | "approved" | "rejected";
+  feedback?: string;
+  verified_at?: string;
+  verified_by?: string;
   analysis_report: AnalysisReport;
   created_at: string;
 }
@@ -133,6 +137,23 @@ export interface AnalysisReport {
     required_certifications?: string[];
     skills_in_demand: string[];
     future_outlook: string;
+  };
+}
+
+export interface GradingStatistics {
+  total_sessions: number;
+  average_score: number;
+  readiness_distribution: {
+    not_ready: number;
+    somewhat_ready: number;
+    ready: number;
+    very_ready: number;
+  };
+  latest_result?: {
+    session_id: string;
+    final_score: number;
+    readiness_level: "not_ready" | "somewhat_ready" | "ready" | "very_ready";
+    created_at: string;
   };
 }
 

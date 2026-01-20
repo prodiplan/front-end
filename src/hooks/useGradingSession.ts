@@ -47,7 +47,7 @@ export function useGradingSession(sessionId?: string) {
 }
 
 export function useGradingSessions(
-  params: { status?: string; limit?: number; offset?: number } = {}
+  params: { status?: string; limit?: number; offset?: number } = {},
 ) {
   const { token, user } = useAuth();
 
@@ -87,13 +87,19 @@ export function useCompleteSession() {
       queryClient.invalidateQueries({
         queryKey: ["grading-sessions", user?.id],
       });
+      queryClient.invalidateQueries({
+        queryKey: ["grading-results", user?.id],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["grading-result", user?.id, variables.sessionId],
+      });
     },
   });
 }
 
 export function useSessionMessages(
   sessionId?: string,
-  params: { limit?: number; offset?: number } = {}
+  params: { limit?: number; offset?: number } = {},
 ) {
   const { token, user } = useAuth();
 
@@ -105,7 +111,7 @@ export function useSessionMessages(
       const response = await gradingService.getMessages(
         sessionId,
         params,
-        token
+        token,
       );
       return response.data;
     },
@@ -136,7 +142,7 @@ export function useSendMessage() {
   });
 }
 
-export function useGradingResult(sessionId?: string, enableFetch: boolean = true) {
+export function useGradingResult(sessionId?: string) {
   const { token, user } = useAuth();
 
   return useQuery({
@@ -147,16 +153,25 @@ export function useGradingResult(sessionId?: string, enableFetch: boolean = true
       const response = await gradingService.getResult(sessionId, token);
       return response.data;
     },
-    enabled: !!token && !!sessionId && enableFetch,
-    retry: 1, // Only retry once after initial attempt
-    retryDelay: 1000,
+    enabled: !!token && !!sessionId,
+    retry: 3, // Retry up to 3 times if data is not ready
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff: 1s, 2s, 4s
+    refetchInterval: (data) => {
+      // Keep refetching every 5 seconds if:
+      // 1. Data is not available yet, OR
+      // 2. Verification status is still pending
+      if (!data) return 2000; // Check every 2s if no data yet
+      if (data.verification_status === "pending") return 5000; // Check every 5s if pending
+      return false; // Stop refetching if approved or rejected
+    },
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
     staleTime: 0,
   });
 }
 
 export function useGradingResults(
-  params: { readiness_level?: string; limit?: number; offset?: number } = {}
+  params: { readiness_level?: string; limit?: number; offset?: number } = {},
 ) {
   const { token, user } = useAuth();
 
@@ -171,5 +186,6 @@ export function useGradingResults(
     staleTime: 0, // Always refetch when component mounts
     refetchOnMount: true,
     refetchOnWindowFocus: true,
+    refetchInterval: 3000, // Auto-refetch every 3 seconds to detect new results
   });
 }
