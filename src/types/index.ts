@@ -69,6 +69,7 @@ export interface GradingResult {
   feedback?: string;
   verified_at?: string;
   verified_by?: string;
+  admin_notes?: string;
   analysis_report: AnalysisReport;
   created_at: string;
 }
