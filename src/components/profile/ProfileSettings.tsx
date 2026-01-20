@@ -221,9 +221,11 @@ export default function ProfileSettings({
             </label>
             {isEditing ? (
               <SearchableSelect
+                id="dream_major"
+                name="dream_major"
                 options={MAJORS}
                 value={formData.dream_major}
-                onChange={(value) =>
+                onChange={(name, value) =>
                   setFormData((prev) => ({ ...prev, dream_major: value }))
                 }
                 placeholder="Pilih jurusan impian"
