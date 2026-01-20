@@ -242,11 +242,13 @@ export default function ProfileSettings({
               Tanggal Lahir
             </label>
             <p className="text-neutral-900 py-2">
-              {new Date(user.birth_date).toLocaleDateString("id-ID", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
+              {user.birth_date
+                ? new Date(user.birth_date).toLocaleDateString("id-ID", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })
+                : "-"}
             </p>
           </div>
 
