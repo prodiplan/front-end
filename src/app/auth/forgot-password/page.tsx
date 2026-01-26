@@ -32,9 +32,12 @@ export default function ForgotPasswordPage() {
     try {
       await authService.forgotPassword({ email });
       setEmailSent(true);
-      toast.success("Email reset password telah dikirim!");
+      toast.success("Jika email terdaftar, link reset password telah dikirim!");
     } catch (error: any) {
-      toast.error(error.message || "Gagal mengirim email reset password");
+      // Security best practice: Don't reveal if email exists or not
+      // Always show success message to prevent email enumeration attacks
+      setEmailSent(true);
+      toast.success("Jika email terdaftar, link reset password telah dikirim!");
     } finally {
       setIsLoading(false);
     }
@@ -64,7 +67,7 @@ export default function ForgotPasswordPage() {
             </h1>
             <p className="text-slate-400 text-sm">
               {emailSent
-                ? "Email telah dikirim! Periksa inbox Anda."
+                ? "Silakan periksa inbox Anda"
                 : "Masukkan email Anda untuk reset password"}
             </p>
           </div>
@@ -77,8 +80,9 @@ export default function ForgotPasswordPage() {
             >
               <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
                 <p className="text-sm text-slate-300 text-center">
-                  Kami telah mengirim link reset password ke{" "}
+                  Jika email{" "}
                   <span className="font-semibold text-blue-400">{email}</span>
+                  {" "}terdaftar, kami telah mengirim link reset password.
                 </p>
                 <p className="text-xs text-slate-400 text-center mt-2">
                   Periksa folder spam jika tidak menemukan email kami.
