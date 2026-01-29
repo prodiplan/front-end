@@ -35,15 +35,6 @@ export default function StatisticsDashboard() {
     };
 
     fetchStatistics();
-
-    // Auto-refetch every 5 seconds to keep statistics up-to-date
-    const interval = setInterval(() => {
-      if (token) {
-        fetchStatistics();
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
   }, [token]);
 
   if (isLoading) {
@@ -101,28 +92,28 @@ export default function StatisticsDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 md:gap-3">
         {statCards.map((card, index) => (
           <motion.div
             key={card.title}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
-            className={`${card.bgColor} rounded-xl border border-${card.color}-200 p-4 hover:shadow-md transition-shadow`}
+            className={`${card.bgColor} rounded-lg md:rounded-xl border border-${card.color}-200 p-3 md:p-4 hover:shadow-md transition-shadow`}
           >
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-3">
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-medium text-neutral-600 mb-1">
+                <p className="text-xs font-medium text-neutral-600 mb-1 truncate">
                   {card.title}
                 </p>
-                <p className={`text-2xl font-bold ${card.textColor} truncate`}>
+                <p className={`text-xl md:text-2xl font-bold ${card.textColor} truncate`}>
                   {card.value}
                 </p>
               </div>
-              <div className={`flex-shrink-0 p-2.5 rounded-lg bg-white/50`}>
-                <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+              <div className={`self-start md:self-auto flex-shrink-0 p-2 md:p-2.5 rounded-lg bg-white/50`}>
+                <card.icon className={`w-4 h-4 md:w-5 md:h-5 ${card.iconColor}`} />
               </div>
             </div>
           </motion.div>
@@ -135,40 +126,46 @@ export default function StatisticsDashboard() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.4 }}
-          className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl border border-blue-200 p-6"
+          className="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg md:rounded-xl border border-blue-200 p-4 md:p-6"
         >
-          <h3 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-            <ChartBarIcon className="w-5 h-5 text-blue-600" />
+          <h3 className="text-base md:text-lg font-semibold text-neutral-900 mb-3 md:mb-4 flex items-center gap-2">
+            <ChartBarIcon className="w-4 h-4 md:w-5 md:h-5 text-blue-600" />
             Assessment Terakhir
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3 md:gap-4">
             <div>
-              <p className="text-sm text-neutral-600 mb-1">Tingkat Kesiapan</p>
-              <p
-                className={`text-lg font-semibold ${
-                  statistics.latest_result.readiness_level === "very_ready"
-                    ? "text-emerald-600"
+              <p className="text-xs md:text-sm text-neutral-600 mb-1">Tingkat Kesiapan</p>
+              {statistics.latest_result.verification_status === "pending" ? (
+                <p className="text-sm md:text-lg font-semibold text-amber-700">
+                  Sedang di Verifikasi
+                </p>
+              ) : (
+                <p
+                  className={`text-sm md:text-lg font-semibold ${
+                    statistics.latest_result.readiness_level === "very_ready"
+                      ? "text-emerald-600"
+                      : statistics.latest_result.readiness_level === "ready"
+                        ? "text-green-600"
+                        : statistics.latest_result.readiness_level ===
+                            "somewhat_ready"
+                          ? "text-yellow-600"
+                          : "text-red-600"
+                  }`}
+                >
+                  {statistics.latest_result.readiness_level === "very_ready"
+                    ? "Sangat Siap"
                     : statistics.latest_result.readiness_level === "ready"
-                      ? "text-green-600"
+                      ? "Siap"
                       : statistics.latest_result.readiness_level ===
                           "somewhat_ready"
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                }`}
-              >
-                {statistics.latest_result.readiness_level === "very_ready"
-                  ? "Sangat Siap"
-                  : statistics.latest_result.readiness_level === "ready"
-                    ? "Siap"
-                    : statistics.latest_result.readiness_level ===
-                        "somewhat_ready"
-                      ? "Cukup Siap"
-                      : "Belum Siap"}
-              </p>
+                        ? "Cukup Siap"
+                        : "Belum Siap"}
+                </p>
+              )}
             </div>
             <div>
-              <p className="text-sm text-neutral-600 mb-1">Tanggal</p>
-              <p className="text-lg font-semibold text-neutral-900">
+              <p className="text-xs md:text-sm text-neutral-600 mb-1">Tanggal</p>
+              <p className="text-sm md:text-lg font-semibold text-neutral-900">
                 {new Date(
                   statistics.latest_result.created_at,
                 ).toLocaleDateString("id-ID", {

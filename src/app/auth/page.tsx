@@ -26,6 +26,7 @@ export default function AuthPage() {
     birth_date: "",
     school_origin: "",
     dream_major: "",
+    // phone_number removed - not supported by backend
   });
   const { login, register } = useAuth();
   const router = useRouter();
@@ -76,6 +77,7 @@ export default function AuthPage() {
       !formData.birth_date ||
       !formData.school_origin ||
       !formData.dream_major
+      // phone_number removed - not required
     ) {
       toast.error("Mohon lengkapi semua field");
       return;
@@ -110,6 +112,7 @@ export default function AuthPage() {
         birth_date: formData.birth_date,
         school_origin: formData.school_origin,
         dream_major: formData.dream_major,
+        // phone_number is NOT supported by backend
       };
       await register(registerData);
       router.push("/dashboard");
@@ -135,6 +138,7 @@ export default function AuthPage() {
       birth_date: "",
       school_origin: "",
       dream_major: "",
+      // phone_number removed
     });
   };
 

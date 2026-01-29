@@ -105,7 +105,7 @@ export default function DashboardPage() {
               <div className="mb-6">
                 <SplitText
                   text="Siap Menemukan Jurusan yang Tepat?"
-                  className="text-4xl md:text-5xl lg:text-6xl font-bold text-neutral-900 leading-tight"
+                  className="text-4xl md:text-5xl font-bold text-neutral-900 leading-tight"
                   tag="h1"
                   delay={100}
                   duration={2.5}
@@ -122,7 +122,7 @@ export default function DashboardPage() {
               <div className="mb-12">
                 <SplitText
                   text="Analisis mendalam dengan teknologi AI untuk mengungkap potensi sejati Anda dan menemukan jurusan yang paling sesuai dengan aspirasi masa depan Anda."
-                  className="text-lg md:text-xl text-neutral-600 max-w-2xl mx-auto leading-relaxed"
+                  className="text-lg text-neutral-600 max-w-2xl mx-auto leading-relaxed"
                   tag="p"
                   delay={70}
                   duration={1.8}
@@ -147,7 +147,7 @@ export default function DashboardPage() {
                 >
                   <Link
                     href="/essay-grader"
-                    className="btn btn-primary btn-lg text-lg px-8 py-4 flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all"
+                    className="btn btn-primary text-base px-6 py-3 flex items-center space-x-2 shadow-lg hover:shadow-xl transition-all"
                   >
                     <span>Mulai Test Sekarang</span>
                     <ArrowRightIcon className="w-5 h-5" />

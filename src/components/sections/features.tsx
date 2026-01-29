@@ -183,7 +183,7 @@ export function Features() {
               >
                 <a
                   href="/auth"
-                  className="btn bg-white text-primary-600 hover:bg-neutral-50 btn-lg px-8 py-4 font-semibold"
+                  className="btn bg-white text-primary-600 hover:bg-neutral-50 px-6 py-3 font-semibold"
                 >
                   Mulai Gratis Sekarang
                 </a>
@@ -195,7 +195,7 @@ export function Features() {
               >
                 <a
                   href="#how-it-works"
-                  className="btn border-2 border-white text-white hover:bg-white hover:text-primary-600 btn-lg px-8 py-4 font-semibold"
+                  className="btn border-2 border-white text-white hover:bg-white hover:text-primary-600 px-6 py-3 font-semibold"
                 >
                   Pelajari Lebih Lanjut
                 </a>

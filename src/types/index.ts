@@ -154,6 +154,7 @@ export interface GradingStatistics {
     session_id: string;
     final_score: number;
     readiness_level: "not_ready" | "somewhat_ready" | "ready" | "very_ready";
+    verification_status: "pending" | "approved" | "rejected";
     created_at: string;
   };
 }

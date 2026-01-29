@@ -13,6 +13,7 @@ export interface RegisterData {
   birth_date: string;
   school_origin: string;
   dream_major: string;
+  // phone_number is NOT supported by backend during registration
 }
 
 export interface AuthResponse {
@@ -36,13 +37,18 @@ export interface ResetPasswordRequest {
 
 export interface UpdateProfileRequest {
   full_name?: string;
-  phone_number?: string;
+  // phone_number is READ-ONLY, set only during registration
   avatar_url?: string;
   dream_major?: string;
 }
 
 export interface DeleteUserRequest {
   password: string;
+}
+
+export interface ChangePasswordRequest {
+  current_password: string;
+  new_password: string;
 }
 
 export const authService = {
@@ -154,6 +160,21 @@ export const authService = {
       API_ENDPOINTS.auth.deleteUser,
       {
         method: "DELETE",
+        body: JSON.stringify(data),
+      },
+      token
+    ) as Promise<ApiResponse<void>>;
+  },
+
+  /**
+   * Change password for logged-in user
+   * POST /auth/change-password
+   */
+  changePassword: async (data: ChangePasswordRequest, token: string) => {
+    return apiCall(
+      API_ENDPOINTS.auth.changePassword,
+      {
+        method: "POST",
         body: JSON.stringify(data),
       },
       token

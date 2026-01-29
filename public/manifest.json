@@ -1,0 +1,17 @@
+{
+  "name": "ProdiPlan - AI Essay Preparedness Grader",
+  "short_name": "ProdiPlan",
+  "description": "Platform inovatif untuk menganalisis kesiapan siswa memilih jurusan kuliah dengan AI-powered conversational agent",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

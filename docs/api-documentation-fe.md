@@ -11,8 +11,6 @@ Managed by `auth-service`. The application uses Firebase Auth integration with a
 **POST** `/v1/auth/register`
 Create a new user account.
 
-**Note:** `phone_number` field is NOT supported by backend during registration.
-
 **Body:**
 ```json
 {
@@ -59,7 +57,7 @@ Refresh the access token when it expires.
 **PATCH** `/v1/auth/profile`
 Update user profile fields.
 
-**Note:** `phone_number`, `email`, `birth_date`, and `school_origin` are read-only and cannot be updated. They are set only during registration.
+**Note:** `phone_number`, `email`, `birth_date`, and `school_origin` are read-only and cannot be updated.
 
 **Body (All fields optional):**
 ```json
@@ -113,19 +111,6 @@ Completes the password reset process using the code from the email.
 {
   "oobCode": "code_from_email_link",
   "newPassword": "newSecurePassword123"
-}
-```
-
-#### Change Password
-**POST** `/v1/auth/change-password`
-Change password for logged-in user. Requires current password for verification.
-**Headers:** `Authorization: Bearer <access_token>`
-
-**Body:**
-```json
-{
-  "current_password": "currentPassword123",
-  "new_password": "newSecurePassword456"
 }
 ```
 

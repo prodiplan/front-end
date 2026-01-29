@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ChartBarIcon,
   SparklesIcon,
   ArrowLeftIcon,
+  TrashIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import Link from "next/link";
@@ -14,6 +15,8 @@ import {
   useGradingSessions,
   useGradingResults,
 } from "@/hooks/useGradingSession";
+import { gradingService } from "@/lib/services/grading";
+import toast from "react-hot-toast";
 
 interface Assessment {
   id: string;
@@ -29,8 +32,13 @@ interface Assessment {
 }
 
 export default function AssessmentsPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, token } = useAuth();
   const router = useRouter();
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [selectionMode, setSelectionMode] = useState<'in-progress' | 'not-completed' | 'completed' | null>(null);
+  const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set());
 
   // Fetch user's grading sessions (for active/analyzing sessions)
   const { data: sessionsData, isLoading: isLoadingSessions, refetch: refetchSessions } =
@@ -154,6 +162,82 @@ export default function AssessmentsPage() {
 
   const isDataLoading = isLoadingSessions || isLoadingResults;
 
+  // Delete handler
+  const handleDeleteSession = async () => {
+    if (!token) return;
+
+    const sessionsToDelete = sessionToDelete ? [sessionToDelete] : Array.from(selectedSessions);
+    if (sessionsToDelete.length === 0) return;
+
+    setIsDeleting(true);
+    try {
+      // Delete all selected sessions
+      await Promise.all(
+        sessionsToDelete.map(sessionId => 
+          gradingService.deleteSession(sessionId, token)
+        )
+      );
+      
+      const count = sessionsToDelete.length;
+      toast.success(`${count} assessment berhasil dihapus`);
+      setShowDeleteModal(false);
+      setSessionToDelete(null);
+      setSelectedSessions(new Set());
+      setSelectionMode(null);
+      refetchSessions();
+      
+      // Reload page untuk memastikan semua data terbarui
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal menghapus assessment");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Toggle selection
+  const toggleSelection = (sessionId: string) => {
+    const newSelected = new Set(selectedSessions);
+    if (newSelected.has(sessionId)) {
+      newSelected.delete(sessionId);
+    } else {
+      newSelected.add(sessionId);
+    }
+    setSelectedSessions(newSelected);
+  };
+
+  // Select all in current mode (toggle)
+  const handleSelectAll = () => {
+    if (!selectionMode) return;
+    
+    let assessmentsToSelect: Assessment[] = [];
+    if (selectionMode === 'in-progress') {
+      assessmentsToSelect = inProgressAssessments;
+    } else if (selectionMode === 'not-completed') {
+      assessmentsToSelect = notCompletedAssessments;
+    } else if (selectionMode === 'completed') {
+      assessmentsToSelect = completedAssessments;
+    }
+    
+    const allIds = assessmentsToSelect.map(a => a.session_id);
+    const allSelected = allIds.every(id => selectedSessions.has(id));
+    
+    // If all are selected, deselect all. Otherwise, select all.
+    if (allSelected) {
+      setSelectedSessions(new Set());
+    } else {
+      setSelectedSessions(new Set(allIds));
+    }
+  };
+
+  // Cancel selection mode
+  const cancelSelection = () => {
+    setSelectionMode(null);
+    setSelectedSessions(new Set());
+  };
+
   useEffect(() => {
     if (!isLoading && !user) {
       router.push("/auth");
@@ -231,7 +315,7 @@ export default function AssessmentsPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/profile/enhanced"
+              href="/profil"
               className="flex items-center space-x-2 group"
             >
               <ArrowLeftIcon className="w-5 h-5 text-gray-600 group-hover:text-primary-600 transition-colors" />
@@ -359,10 +443,52 @@ export default function AssessmentsPage() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-2xl shadow-md p-6"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                <span className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></span>
-                <span>In Progress ({inProgressAssessments.length})</span>
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                  <span className="w-3 h-3 bg-blue-500 rounded-full animate-pulse"></span>
+                  <span>In Progress ({inProgressAssessments.length})</span>
+                </h2>
+                
+                {selectionMode === 'in-progress' ? (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-3 py-1.5 text-sm bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                    >
+                      {inProgressAssessments.every(a => selectedSessions.has(a.session_id)) 
+                        ? 'Batalkan Semua' 
+                        : 'Pilih Semua'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedSessions.size > 0) {
+                          setShowDeleteModal(true);
+                        } else {
+                          toast.error('Pilih minimal 1 assessment');
+                        }
+                      }}
+                      disabled={selectedSessions.size === 0}
+                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Hapus ({selectedSessions.size})
+                    </button>
+                    <button
+                      onClick={cancelSelection}
+                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectionMode('in-progress')}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                    <span>Hapus</span>
+                  </button>
+                )}
+              </div>
 
               <div className="space-y-3">
                 {inProgressAssessments.map((assessment, index) => (
@@ -371,14 +497,46 @@ export default function AssessmentsPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
+                    className="relative"
                   >
-                    <Link
-                      href={`/essay-grader?session=${assessment.session_id}`}
-                    >
-                      <motion.div
-                        whileHover={{ x: 4 }}
-                        className="p-4 bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                    {selectionMode === 'in-progress' ? (
+                      <div
+                        onClick={() => toggleSelection(assessment.session_id)}
+                        className="p-4 bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-lg cursor-pointer hover:border-blue-400 transition-all"
                       >
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedSessions.has(assessment.session_id)}
+                            onChange={() => toggleSelection(assessment.session_id)}
+                            className="w-5 h-5 text-blue-600 rounded focus:ring-blue-500"
+                          />
+                          <div className="flex-1">
+                            <p className="text-lg font-semibold text-gray-900">
+                              {assessment.target_major}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Started on{" "}
+                              {new Date(
+                                assessment.created_at,
+                              ).toLocaleDateString("id-ID", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link
+                        href={`/essay-grader?session=${assessment.session_id}`}
+                      >
+                        <motion.div
+                          whileHover={{ x: 4 }}
+                          className="p-4 bg-gradient-to-r from-blue-50 to-blue-50 border border-blue-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                        >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <p className="text-lg font-semibold text-gray-900">
@@ -410,6 +568,7 @@ export default function AssessmentsPage() {
                         </div>
                       </motion.div>
                     </Link>
+                    )}
                   </motion.div>
                 ))}
               </div>
@@ -424,10 +583,52 @@ export default function AssessmentsPage() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-2xl shadow-md p-6"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                <span className="text-gray-400">✗</span>
-                <span>Tidak Selesai ({notCompletedAssessments.length})</span>
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                  <span className="text-gray-400">✗</span>
+                  <span>Tidak Selesai ({notCompletedAssessments.length})</span>
+                </h2>
+                
+                {selectionMode === 'not-completed' ? (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      {notCompletedAssessments.every(a => selectedSessions.has(a.session_id)) 
+                        ? 'Batalkan Semua' 
+                        : 'Pilih Semua'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedSessions.size > 0) {
+                          setShowDeleteModal(true);
+                        } else {
+                          toast.error('Pilih minimal 1 assessment');
+                        }
+                      }}
+                      disabled={selectedSessions.size === 0}
+                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Hapus ({selectedSessions.size})
+                    </button>
+                    <button
+                      onClick={cancelSelection}
+                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectionMode('not-completed')}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                    <span>Hapus</span>
+                  </button>
+                )}
+              </div>
 
               <div className="space-y-3">
                 {notCompletedAssessments.map((assessment, index) => (
@@ -436,8 +637,41 @@ export default function AssessmentsPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
+                    className="relative"
                   >
-                    <motion.div className="p-4 bg-gradient-to-r from-gray-50 to-gray-50 border border-gray-200 rounded-lg opacity-60 cursor-not-allowed">
+                    {selectionMode === 'not-completed' ? (
+                      <div
+                        onClick={() => toggleSelection(assessment.session_id)}
+                        className="p-4 bg-gradient-to-r from-gray-50 to-gray-50 border border-gray-200 rounded-lg cursor-pointer hover:border-gray-400 transition-all"
+                      >
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedSessions.has(assessment.session_id)}
+                            onChange={() => toggleSelection(assessment.session_id)}
+                            className="w-5 h-5 text-gray-600 rounded focus:ring-gray-500"
+                          />
+                          <div className="flex-1">
+                            <p className="text-lg font-semibold text-gray-600">
+                              {assessment.target_major}
+                            </p>
+                            <p className="text-sm text-gray-400 mt-1">
+                              Started on{" "}
+                              {new Date(assessment.created_at).toLocaleDateString(
+                                "id-ID",
+                                {
+                                  weekday: "long",
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                },
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <motion.div className="p-4 bg-gradient-to-r from-gray-50 to-gray-50 border border-gray-200 rounded-lg opacity-60">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <p className="text-lg font-semibold text-gray-600">
@@ -463,6 +697,7 @@ export default function AssessmentsPage() {
                         </div>
                       </div>
                     </motion.div>
+                    )}
                   </motion.div>
                 ))}
               </div>
@@ -477,10 +712,52 @@ export default function AssessmentsPage() {
               transition={{ duration: 0.6 }}
               className="bg-white rounded-2xl shadow-md p-6"
             >
-              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center space-x-2">
-                <span className="text-green-600">✓</span>
-                <span>Completed ({completedAssessments.length})</span>
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900 flex items-center space-x-2">
+                  <span className="text-green-600">✓</span>
+                  <span>Completed ({completedAssessments.length})</span>
+                </h2>
+                
+                {selectionMode === 'completed' ? (
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={handleSelectAll}
+                      className="px-3 py-1.5 text-sm bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors"
+                    >
+                      {completedAssessments.every(a => selectedSessions.has(a.session_id)) 
+                        ? 'Batalkan Semua' 
+                        : 'Pilih Semua'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedSessions.size > 0) {
+                          setShowDeleteModal(true);
+                        } else {
+                          toast.error('Pilih minimal 1 assessment');
+                        }
+                      }}
+                      disabled={selectedSessions.size === 0}
+                      className="px-3 py-1.5 text-sm bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Hapus ({selectedSessions.size})
+                    </button>
+                    <button
+                      onClick={cancelSelection}
+                      className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                    >
+                      Batal
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSelectionMode('completed')}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <TrashIcon className="w-4 h-4" />
+                    <span>Hapus</span>
+                  </button>
+                )}
+              </div>
 
               <div className="space-y-3">
                 {completedAssessments.map((assessment, index) => (
@@ -489,12 +766,57 @@ export default function AssessmentsPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
+                    className="relative"
                   >
-                    <Link href={`/profile/result/${assessment.session_id}`}>
-                      <motion.div
-                        whileHover={{ x: 4 }}
-                        className="p-4 bg-gradient-to-r from-green-50 to-green-50 border border-green-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                    {selectionMode === 'completed' ? (
+                      <div
+                        onClick={() => toggleSelection(assessment.session_id)}
+                        className="p-4 bg-gradient-to-r from-green-50 to-green-50 border border-green-200 rounded-lg cursor-pointer hover:border-green-400 transition-all"
                       >
+                        <div className="flex items-center space-x-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedSessions.has(assessment.session_id)}
+                            onChange={() => toggleSelection(assessment.session_id)}
+                            className="w-5 h-5 text-green-600 rounded focus:ring-green-500"
+                          />
+                          <div className="flex-1">
+                            <p className="text-lg font-semibold text-gray-900">
+                              {assessment.target_major}
+                            </p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Completed on{" "}
+                              {new Date(
+                                assessment.completed_at!,
+                              ).toLocaleDateString("id-ID", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                              })}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-green-600">
+                              {assessment.final_score}
+                            </div>
+                            <p
+                              className={`text-xs font-medium ${getReadinessDisplay(assessment.readiness_level).color}`}
+                            >
+                              {
+                                getReadinessDisplay(assessment.readiness_level)
+                                  .label
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <Link href={`/profil/result/${assessment.session_id}`}>
+                        <motion.div
+                          whileHover={{ x: 4 }}
+                          className="p-4 bg-gradient-to-r from-green-50 to-green-50 border border-green-200 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                        >
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <p className="text-lg font-semibold text-gray-900">
@@ -528,6 +850,7 @@ export default function AssessmentsPage() {
                         </div>
                       </motion.div>
                     </Link>
+                    )}
                   </motion.div>
                 ))}
               </div>
@@ -558,6 +881,69 @@ export default function AssessmentsPage() {
           )}
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6"
+            >
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <TrashIcon className="w-6 h-6 text-red-600" />
+                </div>
+                <h3 className="text-xl font-bold text-gray-900">
+                  Hapus Assessment
+                </h3>
+              </div>
+
+              <p className="text-gray-600 mb-6">
+                Apakah Anda yakin ingin menghapus {selectedSessions.size > 0 ? selectedSessions.size : 1} assessment? Tindakan ini
+                tidak dapat dibatalkan.
+              </p>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setSessionToDelete(null);
+                  }}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleDeleteSession}
+                  disabled={isDeleting}
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors disabled:opacity-50 flex items-center justify-center space-x-2"
+                >
+                  {isDeleting ? (
+                    <>
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
+                      />
+                      <span>Menghapus...</span>
+                    </>
+                  ) : (
+                    <span>Hapus</span>
+                  )}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -87,12 +87,12 @@ export function Navigation({ onLogoutClick }: NavigationProps) {
         },
         {
           name: "Profile",
-          href: "/profile/enhanced",
+          href: "/profil",
           icon: <UserIcon className="w-4 h-4" />,
         },
         {
           name: "Results",
-          href: "/profile/result",
+          href: "/profil/result",
           icon: <ChartBarIcon className="w-4 h-4" />,
         },
       ];
@@ -308,14 +308,14 @@ export function Navigation({ onLogoutClick }: NavigationProps) {
                         </p>
                       </div>
                       <Link
-                        href="/profile/enhanced"
+                        href="/profil"
                         onClick={() => setIsProfileMenuOpen(false)}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >
                         Profile
                       </Link>
                       <Link
-                        href="/profile/result"
+                        href="/profil/result"
                         onClick={() => setIsProfileMenuOpen(false)}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                       >

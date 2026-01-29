@@ -69,6 +69,11 @@ export default function SessionHistory({
       setShowDeleteModal(false);
       setSessionToDelete(null);
       refetch();
+      
+      // Reload page untuk memastikan semua data terbarui
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       toast.error(error.message || "Gagal menghapus session");
     } finally {
@@ -185,163 +190,103 @@ export default function SessionHistory({
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`bg-white rounded-xl border ${statusInfo.borderColor} p-6 hover:shadow-md transition-shadow`}
+                className="bg-white rounded-lg md:rounded-xl border border-neutral-200 p-3 md:p-5 hover:shadow-md transition-shadow"
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    {/* Header */}
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className={`p-2 ${statusInfo.bgColor} rounded-lg`}>
-                        <statusInfo.icon
-                          className={`w-5 h-5 ${statusInfo.color}`}
-                        />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-neutral-900">
-                          {session.target_major}
-                        </h3>
-                        <p
-                          className={`text-sm font-medium ${statusInfo.color}`}
-                        >
-                          {statusInfo.label}
-                        </p>
-                      </div>
+                <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
+                  {/* Left Content */}
+                  <div className="flex items-start gap-2 md:gap-3 flex-1 min-w-0">
+                    <div className={`p-1.5 md:p-2 ${statusInfo.bgColor} rounded-lg flex-shrink-0`}>
+                      <statusInfo.icon
+                        className={`w-4 h-4 md:w-5 md:h-5 ${statusInfo.color}`}
+                      />
                     </div>
-
-                    {/* Details */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div className="flex items-center gap-2 text-sm text-neutral-600">
-                        <CalendarIcon className="w-4 h-4" />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-sm md:text-base font-semibold text-neutral-900 mb-1 truncate">
+                        {session.target_major}
+                      </h3>
+                      <p className={`text-xs md:text-sm font-medium ${statusInfo.color} mb-2`}>
+                        {statusInfo.label}
+                      </p>
+                      
+                      <div className="flex items-center gap-1.5 md:gap-2 text-xs md:text-sm text-neutral-500 mb-2 md:mb-3">
+                        <CalendarIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         <span>
-                          {new Date(session.created_at).toLocaleDateString(
-                            "id-ID",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                            },
-                          )}
+                          {new Date(session.created_at).toLocaleDateString("id-ID", {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          })}
                         </span>
                       </div>
-                    </div>
 
-                    {/* Result Preview */}
-                    {result && (
-                      <>
-                        <div
-                          className={`${statusInfo.bgColor} rounded-lg p-3 mb-2`}
-                        >
-                          <p className="text-sm font-medium text-neutral-700 mb-1">
+                      {/* Tingkat Kesiapan - Simplified */}
+                      {result && (
+                        <div className={`${
+                          result.verification_status === "pending"
+                            ? "bg-amber-50"
+                            : statusInfo.bgColor
+                        } rounded-lg p-2 md:p-3`}>
+                          <p className="text-xs text-neutral-600 mb-1">
                             Tingkat Kesiapan:
                           </p>
-                          <p
-                            className={`text-sm font-semibold ${
-                              result.readiness_level === "very_ready"
-                                ? "text-emerald-600"
+                          {result.verification_status === "pending" ? (
+                            <p className="text-xs md:text-sm font-semibold text-amber-700">
+                              Sedang di Verifikasi
+                            </p>
+                          ) : (
+                            <p
+                              className={`text-xs md:text-sm font-semibold ${
+                                result.readiness_level === "very_ready"
+                                  ? "text-emerald-600"
+                                  : result.readiness_level === "ready"
+                                    ? "text-green-600"
+                                    : result.readiness_level === "somewhat_ready"
+                                      ? "text-yellow-600"
+                                      : "text-red-600"
+                              }`}
+                            >
+                              {result.readiness_level === "very_ready"
+                                ? "Sangat Siap"
                                 : result.readiness_level === "ready"
-                                  ? "text-green-600"
+                                  ? "Siap"
                                   : result.readiness_level === "somewhat_ready"
-                                    ? "text-yellow-600"
-                                    : "text-red-600"
-                            }`}
-                          >
-                            {result.readiness_level === "very_ready"
-                              ? "Sangat Siap"
-                              : result.readiness_level === "ready"
-                                ? "Siap"
-                                : result.readiness_level === "somewhat_ready"
-                                  ? "Cukup Siap"
-                                  : "Belum Siap"}
-                          </p>
-                        </div>
-
-                        {/* Verification Status Badge */}
-                        <div
-                          className={`rounded-lg p-3 ${
-                            result.verification_status === "approved"
-                              ? "bg-green-50 border border-green-200"
-                              : result.verification_status === "rejected"
-                                ? "bg-red-50 border border-red-200"
-                                : "bg-amber-50 border border-amber-200"
-                          }`}
-                        >
-                          <div className="flex items-center gap-2">
-                            {result.verification_status === "approved" && (
-                              <>
-                                <CheckCircleIcon className="w-4 h-4 text-green-600" />
-                                <span className="text-sm font-medium text-green-700">
-                                  Disetujui Admin
-                                </span>
-                              </>
-                            )}
-                            {result.verification_status === "rejected" && (
-                              <>
-                                <ExclamationTriangleIcon className="w-4 h-4 text-red-600" />
-                                <span className="text-sm font-medium text-red-700">
-                                  Ditolak Admin
-                                </span>
-                              </>
-                            )}
-                            {result.verification_status === "pending" && (
-                              <>
-                                <ClockIcon className="w-4 h-4 text-amber-600" />
-                                <span className="text-sm font-medium text-amber-700">
-                                  Menunggu Verifikasi
-                                </span>
-                              </>
-                            )}
-                          </div>
-                          {result.admin_notes && (
-                            <p className="text-xs text-neutral-600 mt-1">
-                              {result.admin_notes}
+                                    ? "Cukup Siap"
+                                    : "Belum Siap"}
                             </p>
                           )}
                         </div>
-                      </>
-                    )}
+                      )}
+
+                      {/* Verification Badge - Simplified */}
+                      {result && result.verification_status === "approved" && (
+                        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-50 border border-green-200 rounded-md">
+                          <CheckCircleIcon className="w-3.5 h-3.5 text-green-600" />
+                          <span className="text-xs font-medium text-green-700">
+                            Disetujui Admin
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2 ml-4">
-                    {statusInfo.status === "completed" &&
-                      result &&
-                      result.verification_status === "approved" && (
-                        <Link
-                          href={`/profile/result/${session.id}`}
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
-                        >
-                          <EyeIcon className="w-4 h-4" />
-                          Lihat Detail
-                        </Link>
-                      )}
-                    {statusInfo.status === "completed" &&
-                      result &&
-                      result.verification_status === "pending" && (
-                        <button
-                          disabled
-                          className="flex items-center gap-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-lg cursor-not-allowed text-sm font-medium"
-                        >
-                          <ClockIcon className="w-4 h-4" />
-                          Menunggu Verifikasi
-                        </button>
-                      )}
-                    {statusInfo.status === "completed" &&
-                      result &&
-                      result.verification_status === "rejected" && (
-                        <button
-                          disabled
-                          className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 rounded-lg cursor-not-allowed text-sm font-medium"
-                        >
-                          <ExclamationTriangleIcon className="w-4 h-4" />
-                          Ditolak
-                        </button>
-                      )}
+                  {/* Right Actions */}
+                  <div className="flex md:flex-col gap-2 flex-shrink-0 w-full md:w-auto">
+                    {statusInfo.status === "completed" && result && result.verification_status === "approved" && (
+                      <Link
+                        href={`/profil/result/${session.id}`}
+                        className="flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
+                      >
+                        <EyeIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                        <span className="hidden md:inline">Lihat Detail</span>
+                        <span className="md:hidden">Detail</span>
+                      </Link>
+                    )}
                     {statusInfo.status === "active" && (
                       <Link
                         href={`/essay-grader?session=${session.id}`}
-                        className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-sm font-medium"
+                        className="flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
                       >
-                        <ClockIcon className="w-4 h-4" />
+                        <ClockIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
                         Lanjutkan
                       </Link>
                     )}
@@ -350,9 +295,9 @@ export default function SessionHistory({
                         setSessionToDelete(session.id);
                         setShowDeleteModal(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-sm font-medium"
+                      className="flex-1 md:flex-none flex items-center justify-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-lg transition-colors text-xs md:text-sm font-medium whitespace-nowrap"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
                       Hapus
                     </button>
                   </div>
@@ -367,7 +312,7 @@ export default function SessionHistory({
       {hasMore && (
         <div className="flex justify-center pt-4">
           <Link
-            href="/profile/assessments"
+            href="/profil/assessments"
             className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium shadow-md hover:shadow-lg"
           >
             <ChartBarIcon className="w-5 h-5" />

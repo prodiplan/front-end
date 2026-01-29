@@ -12,7 +12,7 @@ export function middleware(request: NextRequest) {
   // Jika user belum login dan akses protected routes, redirect ke auth
   if (
     !token &&
-    (pathname.startsWith("/dashboard") || pathname.startsWith("/essay-grader"))
+    (pathname.startsWith("/dashboard") || pathname.startsWith("/essay-grader") || pathname.startsWith("/profil"))
   ) {
     return NextResponse.redirect(new URL("/auth", request.url));
   }
@@ -21,5 +21,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/auth", "/dashboard/:path*", "/essay-grader/:path*"],
+  matcher: ["/auth", "/dashboard/:path*", "/essay-grader/:path*", "/profil/:path*"],
 };

@@ -233,7 +233,7 @@ export default function ConfirmationPage() {
                 className="flex flex-col sm:flex-row gap-3 mt-6 flex-shrink-0"
               >
                 <Link
-                  href="/profile/enhanced"
+                  href="/profil"
                   className="flex-1 btn btn-primary btn-sm sm:btn-md px-4 py-2 flex items-center justify-center space-x-1 text-center text-xs sm:text-sm"
                 >
                   <span>Kembali ke Profil</span>

@@ -10,6 +10,7 @@ import {
 import Cookies from "js-cookie";
 import toast from "react-hot-toast";
 import { authService } from "@/lib/services/auth";
+import { ApiError } from "@/lib/api";
 import type {
   RegisterData,
   LoginCredentials,
@@ -129,13 +130,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const fetchUserProfile = async (authToken: string) => {
     try {
+      console.log("=== Fetching User Profile ===");
       const data = await authService.getProfile(authToken);
+      console.log("Profile response from API:", data);
       if (data.success) {
+        console.log("User data received:", data.data);
+        console.log("Phone number in response:", data.data.phone_number);
         setUser(data.data);
       } else {
         throw new Error(data.error?.message || "Authentication failed");
       }
     } catch (error) {
+      console.error("Error fetching profile:", error);
       throw new Error(
         error instanceof Error ? error.message : "Failed to fetch user profile"
       );
@@ -153,16 +159,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { user: userData, token: authToken, refresh_token } = data.data;
 
+      console.log("=== Login Success ===");
+      console.log("User data from login:", userData);
+      console.log("Phone number:", userData.phone_number);
+
       // Save tokens
       Cookies.set("token", authToken, { expires: 7 });
       Cookies.set("refresh_token", refresh_token, { expires: 30 });
 
       setToken(authToken);
       setUser(userData);
-
-      toast.success("Login berhasil!");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Login gagal");
+    } catch (error: any) {
+      // Deteksi jenis error berdasarkan status code dan error message
+      let errorMessage = "Login gagal";
+      
+      // Check for deleted account
+      if (error.statusCode === 403 ||
+          error.statusCode === 410 ||
+          error.message?.toLowerCase().includes('account deleted') ||
+          error.message?.toLowerCase().includes('account has been deleted') ||
+          error.message?.toLowerCase().includes('user deleted') ||
+          error.errorCode === 'ACCOUNT_DELETED' ||
+          error.errorCode === 'USER_DELETED') {
+        errorMessage = "Akun ini telah dihapus dan tidak dapat digunakan lagi";
+      } else if (error.statusCode === 404 || 
+          error.message?.toLowerCase().includes('user not found') ||
+          error.message?.toLowerCase().includes('email not found') ||
+          error.message?.toLowerCase().includes('not registered') ||
+          error.errorCode === 'USER_NOT_FOUND' ||
+          error.errorCode === 'EMAIL_NOT_FOUND') {
+        errorMessage = "Email tidak terdaftar";
+      } else if (error.statusCode === 401 || 
+                 error.message?.toLowerCase().includes('invalid password') ||
+                 error.message?.toLowerCase().includes('wrong password') ||
+                 error.message?.toLowerCase().includes('incorrect password') ||
+                 error.errorCode === 'INVALID_PASSWORD' ||
+                 error.errorCode === 'WRONG_PASSWORD') {
+        errorMessage = "Password salah";
+      } else if (error.message?.toLowerCase().includes('invalid_login_credentials') ||
+                 error.message?.toLowerCase().includes('invalid credentials')) {
+        // Fallback untuk error umum - coba deteksi dengan mengecek email terlebih dahulu
+        // Untuk sementara, gunakan pesan umum atau bisa ditambahkan logika tambahan
+        errorMessage = "Email atau password salah";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       throw error;
     } finally {
       setIsLoading(false);
@@ -188,8 +231,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(newUser);
 
       toast.success("Registrasi berhasil!");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Registrasi gagal");
+    } catch (error: any) {
+      // Deteksi jenis error berdasarkan status code dan error message
+      let errorMessage = "Registrasi gagal";
+      
+      if (error.statusCode === 409 || 
+          error.message?.toLowerCase().includes('email already exists') ||
+          error.message?.toLowerCase().includes('email sudah terdaftar') ||
+          error.message?.toLowerCase().includes('email_exist') ||
+          error.message?.toLowerCase().includes('already registered') ||
+          error.errorCode === 'EMAIL_EXISTS' ||
+          error.errorCode === 'EMAIL_ALREADY_EXISTS' ||
+          error.errorCode === 'USER_ALREADY_EXISTS') {
+        errorMessage = "Email sudah terdaftar";
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
       throw error;
     } finally {
       setIsLoading(false);
@@ -245,18 +304,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       // Backend expects PATCH /auth/profile
       // Only allows: full_name, phone_number, avatar_url, dream_major
+      // Only send fields that actually changed
       const updateData: UpdateProfileRequest = {};
-      if (userData.full_name !== undefined)
+      
+      if (userData.full_name !== undefined && userData.full_name !== user?.full_name) {
         updateData.full_name = userData.full_name;
-      if (userData.phone_number !== undefined)
-        updateData.phone_number = userData.phone_number;
-      if (userData.avatar_url !== undefined)
-        updateData.avatar_url = userData.avatar_url;
-      if (userData.dream_major !== undefined)
+      }
+      
+      // Note: phone_number is READ-ONLY, cannot be updated via API
+      // if (userData.phone_number !== undefined && userData.phone_number !== user?.phone_number) {
+      //   if (userData.phone_number) {
+      //     updateData.phone_number = userData.phone_number;
+      //   }
+      // }
+      
+      if (userData.avatar_url !== undefined && userData.avatar_url !== user?.avatar_url) {
+        // Only send if there's an actual value
+        if (userData.avatar_url) {
+          updateData.avatar_url = userData.avatar_url;
+        }
+      }
+      
+      if (userData.dream_major !== undefined && userData.dream_major !== user?.dream_major) {
         updateData.dream_major = userData.dream_major;
+      }
 
       console.log("=== Auth Provider Update Profile Debug ===");
-      console.log("Sending to API:", updateData);
+      console.log("Original user:", {
+        full_name: user?.full_name,
+        phone_number: user?.phone_number,
+        dream_major: user?.dream_major,
+        avatar_url: user?.avatar_url,
+      });
+      console.log("Received userData:", userData);
+      console.log("Sending to API (only changed fields):", updateData);
 
       const data = await authService.updateProfile(updateData, token);
 
@@ -323,13 +404,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error(data.error?.message || "Failed to delete account");
       }
 
+      // Call logout to properly clean up session and invalidate tokens on backend
+      try {
+        await authService.logout(token, Cookies.get("refresh_token"));
+      } catch (logoutError) {
+        // Continue even if logout fails, as account is already deleted
+        console.warn("Logout after delete account failed:", logoutError);
+      }
+
       // Clear local state
       Cookies.remove("token");
       Cookies.remove("refresh_token");
       setToken(null);
       setUser(null);
 
-      toast.success("Akun berhasil dihapus");
+      // Toast success will be shown by the calling component (ProfileSettings)
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Gagal menghapus akun"

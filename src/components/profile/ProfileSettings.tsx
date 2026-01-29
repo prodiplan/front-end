@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UserIcon,
@@ -11,6 +11,7 @@ import {
   CheckIcon,
   XMarkIcon,
   ArrowRightOnRectangleIcon,
+  KeyIcon,
 } from "@heroicons/react/24/outline";
 import { useAuth } from "@/components/providers/auth-provider";
 import { authService } from "@/lib/services/auth";
@@ -28,20 +29,36 @@ export default function ProfileSettings({
   onUpdate,
   onLogout,
 }: ProfileSettingsProps) {
-  const { user, updateProfile, token } = useAuth();
+  const { user, updateProfile, deleteAccount, token } = useAuth();
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
+  
+  // Change password state
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: user?.full_name || "",
-    phone_number: user?.phone_number || "",
+    // phone_number is read-only, not included in formData
     dream_major: user?.dream_major || "",
     avatar_url: user?.avatar_url || "",
   });
+
+  // Sync formData with user when user changes (e.g., after login or profile update)
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        full_name: user.full_name || "",
+        // phone_number is read-only, not included in formData
+        dream_major: user.dream_major || "",
+        avatar_url: user.avatar_url || "",
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -53,12 +70,20 @@ export default function ProfileSettings({
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      console.log("=== ProfileSettings handleSave ===");
+      console.log("formData:", formData);
+      console.log("user (original):", {
+        full_name: user?.full_name,
+        phone_number: user?.phone_number,
+        dream_major: user?.dream_major,
+        avatar_url: user?.avatar_url,
+      });
+      
       await updateProfile(formData);
-      toast.success("Profil berhasil diperbarui!");
       setIsEditing(false);
       onUpdate?.();
     } catch (error: any) {
-      toast.error(error.message || "Gagal memperbarui profil");
+      // Error toast already handled in auth provider
     } finally {
       setIsSaving(false);
     }
@@ -67,7 +92,7 @@ export default function ProfileSettings({
   const handleCancel = () => {
     setFormData({
       full_name: user?.full_name || "",
-      phone_number: user?.phone_number || "",
+      // phone_number is read-only, not included
       dream_major: user?.dream_major || "",
       avatar_url: user?.avatar_url || "",
     });
@@ -87,9 +112,12 @@ export default function ProfileSettings({
 
     setIsDeleting(true);
     try {
-      await authService.deleteUser({ password: deletePassword }, token);
-      toast.success("Akun berhasil dihapus");
-      // Logout and redirect to home
+      // Gunakan deleteAccount dari auth context yang sudah handle logout otomatis
+      await deleteAccount(deletePassword);
+      
+      toast.success("Akun berhasil dihapus. Anda akan dialihkan...");
+      
+      // Redirect setelah delay singkat
       setTimeout(() => {
         router.push("/");
       }, 1500);
@@ -99,6 +127,25 @@ export default function ProfileSettings({
       setIsDeleting(false);
       setShowDeleteModal(false);
       setDeletePassword("");
+    }
+  };
+
+  const handleChangePassword = async () => {
+    // Untuk sekarang menggunakan flow forgot password
+    if (!user?.email) {
+      toast.error("Email tidak ditemukan");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      await authService.forgotPassword({ email: user.email });
+      toast.success("Email reset password telah dikirim! Silakan cek inbox Anda.");
+      setShowChangePassword(false);
+    } catch (error: any) {
+      toast.error(error.message || "Gagal mengirim email reset password");
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -164,7 +211,7 @@ export default function ProfileSettings({
               <input
                 type="text"
                 name="full_name"
-                value={formData.full_name}
+                value={formData.full_name || ""}
                 onChange={handleInputChange}
                 className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 placeholder="Nama lengkap Anda"
@@ -187,7 +234,7 @@ export default function ProfileSettings({
             </p>
           </div>
 
-          {/* Phone Number */}
+          {/* Phone Number (Read-only) */}
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-2">
               <div className="flex items-center gap-2">
@@ -195,20 +242,9 @@ export default function ProfileSettings({
                 Nomor Telepon
               </div>
             </label>
-            {isEditing ? (
-              <input
-                type="tel"
-                name="phone_number"
-                value={formData.phone_number}
-                onChange={handleInputChange}
-                className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                placeholder="+62 812 3456 7890"
-              />
-            ) : (
-              <p className="text-neutral-900 py-2">
-                {user.phone_number || "-"}
-              </p>
-            )}
+            <p className="text-neutral-900 py-2">
+              {user.phone_number || "-"}
+            </p>
           </div>
 
           {/* Dream Major */}
@@ -260,6 +296,84 @@ export default function ProfileSettings({
             <p className="text-neutral-900 py-2">{user.school_origin}</p>
           </div>
         </div>
+      </div>
+
+      {/* Change Password Card */}
+      <div className="bg-white rounded-xl shadow-sm border border-neutral-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl font-semibold text-neutral-900">
+              Keamanan Akun
+            </h2>
+            <p className="text-sm text-neutral-600 mt-1">
+              Ubah password untuk menjaga keamanan akun Anda
+            </p>
+          </div>
+          {!showChangePassword ? (
+            <button
+              onClick={() => setShowChangePassword(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors text-sm font-medium"
+            >
+              <KeyIcon className="w-4 h-4" />
+              Ubah Password
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowChangePassword(false)}
+              disabled={isChangingPassword}
+              className="flex items-center gap-2 px-4 py-2 bg-neutral-200 hover:bg-neutral-300 text-neutral-700 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+            >
+              <XMarkIcon className="w-4 h-4" />
+              Batal
+            </button>
+          )}
+        </div>
+
+        <AnimatePresence>
+          {showChangePassword && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="space-y-4"
+            >
+              {/* Info tentang reset password */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Reset Password via Email</strong>
+                </p>
+                <p className="text-sm text-blue-700 mt-2">
+                  Untuk mengubah password, kami akan mengirimkan link reset password ke email Anda:
+                </p>
+                <p className="text-sm font-semibold text-blue-900 mt-1">
+                  {user?.email}
+                </p>
+                <p className="text-sm text-blue-700 mt-2">
+                  Silakan klik tombol di bawah untuk menerima email reset password.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                onClick={handleChangePassword}
+                disabled={isChangingPassword}
+                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isChangingPassword ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Mengirim Email...
+                  </>
+                ) : (
+                  <>
+                    <CheckIcon className="w-5 h-5" />
+                    Kirim Email Reset Password
+                  </>
+                )}
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Danger Zone */}
@@ -327,6 +441,7 @@ export default function ProfileSettings({
                   <li>Semua data Anda akan dihapus permanen</li>
                   <li>Riwayat assessment akan hilang</li>
                   <li>Akun tidak dapat dipulihkan kembali</li>
+                  <li>Anda akan langsung logout dan tidak bisa login lagi dengan akun ini</li>
                 </ul>
               </div>
 

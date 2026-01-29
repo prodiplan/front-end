@@ -178,7 +178,7 @@ export default function ResultDetailPage() {
 
           {/* Action Button */}
           <Link
-            href="/profile/enhanced"
+            href="/profil"
             className="btn btn-primary btn-lg inline-flex items-center space-x-2"
           >
             <ArrowLeftIcon className="w-5 h-5" />
@@ -210,7 +210,7 @@ export default function ResultDetailPage() {
             akan menerima notifikasi setelah verifikasi selesai.
           </p>
           <div className="flex flex-col gap-3">
-            <Link href="/profile/enhanced" className="btn btn-primary">
+            <Link href="/profil" className="btn btn-primary">
               Kembali ke Profil
             </Link>
             <Link href="/dashboard" className="btn btn-secondary">
@@ -254,7 +254,7 @@ export default function ResultDetailPage() {
             <Link href="/essay-grader" className="btn btn-primary">
               Mulai Sesi Baru
             </Link>
-            <Link href="/profile/enhanced" className="btn btn-secondary">
+            <Link href="/profil" className="btn btn-secondary">
               Kembali ke Profil
             </Link>
           </div>
@@ -397,7 +397,7 @@ export default function ResultDetailPage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between">
             <Link
-              href="/profile/enhanced"
+              href="/profil"
               className="flex items-center space-x-2 group"
             >
               <ArrowLeftIcon className="w-5 h-5 text-neutral-600 group-hover:text-primary-600 transition-colors" />
@@ -569,7 +569,7 @@ export default function ResultDetailPage() {
           className="flex flex-col sm:flex-row gap-4 mt-12"
         >
           <Link
-            href="/profile/enhanced"
+            href="/profil"
             className="flex-1 btn btn-secondary btn-lg px-6 py-4 text-center"
           >
             Kembali ke Profil

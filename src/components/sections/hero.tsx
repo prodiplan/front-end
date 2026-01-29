@@ -105,7 +105,7 @@ export function Hero() {
           <div className="mb-6">
             <SplitText
               text="Uji Kesiapan Jurusan Kuliah Anda"
-              className="text-4xl md:text-6xl lg:text-7xl font-bold text-neutral-900 leading-tight"
+              className="text-4xl md:text-5xl font-bold text-neutral-900 leading-tight"
               tag="h1"
               delay={100}
               duration={3}
@@ -122,7 +122,7 @@ export function Hero() {
           <div className="mb-10">
             <SplitText
               text="Analisis mendalam berbasis AI mengungkap potensi tersembunyi Anda, memberikan rekomendasi jurusan yang sesuai, dan persiapan sukses masuk PTN."
-              className="text-xl md:text-2xl text-neutral-600 max-w-3xl mx-auto leading-relaxed"
+              className="text-lg text-neutral-600 max-w-3xl mx-auto leading-relaxed"
               tag="p"
               delay={70}
               duration={2}
@@ -148,7 +148,7 @@ export function Hero() {
               >
                 <Link
                   href="/dashboard"
-                  className="btn btn-primary btn-lg text-lg px-8 py-4 flex items-center space-x-2"
+                  className="btn btn-primary text-base px-6 py-3 flex items-center space-x-2"
                 >
                   <span>Dashboard Saya</span>
                   <ChartBarIcon className="w-5 h-5" />
@@ -163,7 +163,7 @@ export function Hero() {
                 >
                   <Link
                     href="/auth"
-                    className="bg-blue-600 text-white flex items-center space-x-2 font-medium text-lg px-8 py-4 rounded-lg hover:bg-blue-700 transition-colors"
+                    className="bg-blue-600 text-white flex items-center space-x-2 font-medium text-base px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                   >
                     <span>Mulai Gratis</span>
                     <SparklesIcon className="w-5 h-5" />
@@ -176,7 +176,7 @@ export function Hero() {
                 >
                   <button
                     onClick={() => setIsVideoModalOpen(true)}
-                    className="btn btn-secondary btn-lg text-lg px-8 py-4 flex items-center space-x-2"
+                    className="btn btn-secondary text-base px-6 py-3 flex items-center space-x-2"
                   >
                     <PlayIcon className="w-5 h-5" />
                     <span>Lihat Demo</span>

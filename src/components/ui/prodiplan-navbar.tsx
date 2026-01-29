@@ -391,7 +391,7 @@ export function ProdiPlanNavBar({
                       onClick={() => setIsProfileMenuOpen(false)}
                     >
                       <Link
-                        href="/profile/enhanced"
+                        href="/profil"
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
                       >
                         Profile
@@ -431,7 +431,7 @@ export function ProdiPlanNavBar({
                         </p>
                       </div>
                       <Link
-                        href="/profile/enhanced"
+                        href="/profil"
                         className="block px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors text-sm"
                       >
                         Profile

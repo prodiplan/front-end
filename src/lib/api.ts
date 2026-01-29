@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     logout: `${API_BASE_URL}/v1/auth/logout`,
     forgotPassword: `${API_BASE_URL}/v1/auth/forgot-password`,
     resetPassword: `${API_BASE_URL}/v1/auth/reset-password`,
+    changePassword: `${API_BASE_URL}/v1/auth/change-password`,
     deleteUser: `${API_BASE_URL}/v1/auth/user`,
   },
   // Grading Session endpoints
@@ -41,6 +42,21 @@ export const API_ENDPOINTS = {
 };
 
 /**
+ * Custom error class untuk API errors
+ */
+export class ApiError extends Error {
+  statusCode: number;
+  errorCode?: string;
+  
+  constructor(message: string, statusCode: number, errorCode?: string) {
+    super(message);
+    this.statusCode = statusCode;
+    this.errorCode = errorCode;
+    this.name = 'ApiError';
+  }
+}
+
+/**
  * Fetch wrapper with default headers
  */
 export async function apiCall(
@@ -66,13 +82,17 @@ export async function apiCall(
   try {
     data = await response.json();
   } catch (error) {
-    throw new Error(`Failed to parse response: ${response.statusText}`);
+    throw new ApiError(
+      `Failed to parse response: ${response.statusText}`,
+      response.status
+    );
   }
 
   if (!response.ok) {
     const errorMessage =
       data.error?.message || data.message || `API Error: ${response.status}`;
-    throw new Error(errorMessage);
+    const errorCode = data.error?.code || data.code;
+    throw new ApiError(errorMessage, response.status, errorCode);
   }
 
   return data;

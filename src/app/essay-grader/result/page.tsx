@@ -81,7 +81,7 @@ function ResultContent() {
             Hasil analisis Anda sedang menunggu persetujuan dari admin. Anda
           </p>
           <div className="flex flex-col gap-3">
-            <Link href="/profile/enhanced" className="btn btn-primary">
+            <Link href="/profil" className="btn btn-primary">
               Kembali ke Profil
             </Link>
             <Link href="/dashboard" className="btn btn-secondary">
@@ -120,7 +120,7 @@ function ResultContent() {
             <Link href="/essay-grader" className="btn btn-primary">
               Mulai Sesi Baru
             </Link>
-            <Link href="/profile/enhanced" className="btn btn-secondary">
+            <Link href="/profil" className="btn btn-secondary">
               Kembali ke Profil
             </Link>
           </div>
